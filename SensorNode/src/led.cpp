@@ -1,6 +1,5 @@
 #include "led.h"
 
-
 void setupLED(void)
 {
     gpio_config_t config ={
