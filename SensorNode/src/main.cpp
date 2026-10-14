@@ -1,1 +1,5 @@
-extern "C" void app_main() {}
+#include "ldr.h"
+
+extern "C" void app_main() {
+    setupLDR();
+}

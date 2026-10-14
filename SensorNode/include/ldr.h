@@ -1,11 +1,12 @@
 #ifndef LDR_H
 #define LDR_H
 
-#define LDR_PIN GPIO_NUM_34
+#define LDR_PIN GPIO_NUM_23
 
 #include <driver/gpio.h>
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
+#include <esp_log.h>
 
 // Implementation for setting up LDR
 void setupLDR(void);

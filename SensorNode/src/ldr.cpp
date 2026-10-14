@@ -1,13 +1,15 @@
 #include "ldr.h"
 
 static bool ldrState_Prev = false;
+const char *LDR = "Status of LDR";
 
 static void readLDR(void *pvParameters) {
     TickType_t taskWakeTimeReference = xTaskGetTickCount();
 
     while(true) {
         bool ldrState_Current = gpio_get_level(LDR_PIN);
-
+        
+        ESP_LOGI(LDR, "Status: %d", ldrState_Current);
         if(ldrState_Current != ldrState_Prev) {
             ldrState_Prev = ldrState_Current;
         }
