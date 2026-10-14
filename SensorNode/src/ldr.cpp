@@ -1,5 +1,21 @@
 #include "ldr.h"
 
+static bool ldrState_Prev = false;
+
+static void readLDR(void *pvParameters) {
+    TickType_t taskWakeTimeReference = xTaskGetTickCount();
+
+    while(true) {
+        bool ldrState_Current = gpio_get_level(LDR_PIN);
+
+        if(ldrState_Current != ldrState_Prev) {
+            ldrState_Prev = ldrState_Current;
+        }
+
+        xTaskDelayUntil(&taskWakeTimeReference, pdMS_TO_TICKS(2000));
+    }
+}
+
 void setupLDR(void) {
     gpio_config_t config = {
         .pin_bit_mask = (1ULL << LDR_PIN),
@@ -10,9 +26,10 @@ void setupLDR(void) {
     };
 
     gpio_config(&config);
+
+    xTaskCreate(readLDR, "LDR Module", 2048, NULL, 5, NULL);
 }
 
-bool readLDR(void) {
-    bool value = gpio_get_level(GPIO_NUM_34);
-    return value;
+bool sendLDR(void) {
+    return ldrState_Prev;
 }
