@@ -1,8 +1,6 @@
 #include "ldr.h"
 
-
 void setupLDR(void) {
-    // Implementation for setting up LDR
     gpio_config_t config = {
         .pin_bit_mask = (1ULL << GPIO_NUM_34), // Assuming LDR is connected to GPIO34
         .mode = GPIO_MODE_INPUT,
@@ -10,11 +8,11 @@ void setupLDR(void) {
         .pull_down_en = GPIO_PULLDOWN_ENABLE,
         .intr_type = GPIO_INTR_DISABLE
     };
+
     gpio_config(&config);
 }
 
-int readLDR(void) {
-    // Implementation for reading LDR
-    int value = gpio_get_level(GPIO_NUM_34);
+bool readLDR(void) {
+    bool value = gpio_get_level(GPIO_NUM_34);
     return value;
 }
