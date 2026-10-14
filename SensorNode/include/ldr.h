@@ -1,6 +1,8 @@
 #ifndef LDR_H
 #define LDR_H
 
+#define LDR_PIN GPIO_NUM_34
+
 #include <driver/gpio.h>  
 
 // Implementation for setting up LDR
