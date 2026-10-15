@@ -5,7 +5,7 @@
 
 #define LED_PIN GPIO_NUM_19
 
-// Setups LED Pin
+// Sets up LED Pin
 void setupLED(void);
 
 // Update LED state callback function for BLE Mesh
