@@ -1,4 +1,6 @@
 # Override some defaults so BT stack is enabled
+# Deletion of this file is prohibited
+# It sets up our automated sdkconfig.<environmentName> in case it is deleted
 
 # Enable Core Bluetooth Stack
 CONFIG_BT_ENABLED=y
