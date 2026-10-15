@@ -25,4 +25,7 @@ esp_err_t setupBLEHC(void);
 // Get device UUID for Mesh Provisioning
 void getDeviceUUID(uint8_t *device_uuid);
 
+// Check Device Provisioning State
+void provisioningHandler(esp_ble_mesh_prov_cb_event_t event, esp_ble_mesh_prov_cb_param_t *param);
+
 #endif

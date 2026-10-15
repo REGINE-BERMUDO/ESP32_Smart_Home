@@ -52,3 +52,16 @@ void getDeviceUUID(uint8_t *device_uuid) {
     // Copies the Bluetooth Controller 16-byte UUID to the pointer address
     memcpy(device_uuid + 2, esp_bt_dev_get_address(), BD_ADDR_LEN);
 }
+
+
+
+
+
+
+
+
+
+
+void provisioningHandler(esp_ble_mesh_prov_cb_event_t event, esp_ble_mesh_prov_cb_param_t *param) {
+    
+}
