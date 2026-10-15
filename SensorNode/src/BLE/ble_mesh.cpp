@@ -4,6 +4,7 @@ static const char *TAG = "BLE Mesh";
 
 esp_err_t setupBLEHC(void) {
     esp_err_t result;
+    
     // Free up Classic Bluetooth memory
     ESP_ERROR_CHECK(esp_bt_controller_mem_release(ESP_BT_MODE_CLASSIC_BT));
 
