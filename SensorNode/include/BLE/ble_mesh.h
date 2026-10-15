@@ -7,7 +7,13 @@
 // Bluetooth Macros
 #include <esp_bt.h>
 
+// Bluedroid Host Stack
+#include <esp_bt_main.h>
+
+// ESP-IDF Logging functions
+#include <esp_log.h>
+
 // Sets up BLE Bluedroid Host & Controller Stack
-void setupBLEHC(void);
+esp_err_t setupBLEHC(void);
 
 #endif
