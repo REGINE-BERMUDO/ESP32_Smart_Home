@@ -4,6 +4,7 @@
 // esp_err_t macros
 #include <esp_err.h>
 
+// Bluetooth Macros
 #include <esp_bt.h>
 
 // Sets up BLE Bluedroid Host & Controller Stack

@@ -1,5 +1,6 @@
 #include "BLE/ble_mesh.h"
 
 void setupBLEHC(void) {
+    // Free up Classic Bluetooth memory
     ESP_ERROR_CHECK(esp_bt_controller_mem_release(ESP_BT_MODE_CLASSIC_BT));
 }
