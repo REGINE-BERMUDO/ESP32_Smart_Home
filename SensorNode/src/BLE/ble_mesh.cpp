@@ -84,7 +84,7 @@ void provisioningHandler(esp_ble_mesh_prov_cb_event_t event, esp_ble_mesh_prov_c
             esp_ble_mesh_node_local_reset();
 
             // Creates a FreeRTOS task to reboot the device after a delay
-            xTaskCreate(rebootDevice, "Reboot Device", 2048, NULL, 5, NULL); 
+            xTaskCreate(rebootDevice, "Reboot Device", 2048, NULL, 1, NULL); 
             break;
         default:
             break;
