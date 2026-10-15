@@ -59,6 +59,9 @@ void getDeviceUUID(uint8_t *device_uuid) {
 
 
 
+
+
+
 static void rebootDevice(void *pvParameters) {
     // Waits for 5 seconds before rebooting the device
     vTaskDelay(pdMS_TO_TICKS(5000));
@@ -106,4 +109,53 @@ void ble_configHandler(esp_ble_mesh_cfg_server_cb_event_t event, esp_ble_mesh_cf
             break;
       }  
     }
+}
+
+
+
+
+
+
+
+
+
+
+// Created attention_callbacks_t Object and initialized current attention states
+attention_callbacks_t attentionState = {NULL, NULL};
+
+void health_EventHandler(esp_ble_mesh_health_server_cb_event_t event, esp_ble_mesh_health_server_cb_param_t *param) {
+    // Logs current Health Server Event
+    ESP_LOGI(TAG, "Health Server Event: %d", event);
+
+    switch(event) {
+    // If Health Server Event is ON
+    case ESP_BLE_MESH_HEALTH_SERVER_ATTENTION_ON_EVT:
+
+        // Checks if the function pointer attention_on exists or not
+        if(attentionState.attention_on != NULL) {
+
+            // Call the function attention_on()
+            attentionState.attention_on();
+        } 
+        break;
+    
+    // If Health Server Event is OFF
+    case ESP_BLE_MESH_HEALTH_SERVER_ATTENTION_OFF_EVT:
+
+        // Checks if the function pointer attention_on exists or not
+        if(attentionState.attention_off != NULL) {
+
+            // Call the function attention_off()
+            attentionState.attention_off();
+        }
+        break;
+    
+    default:
+        break;
+    }
+}
+
+void attention_Handler(attention_callbacks_t callbacks) {
+    // Updates attentionState from an Initialized Node BLE function
+    attentionState = callbacks;
 }
