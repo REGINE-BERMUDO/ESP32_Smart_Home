@@ -1,0 +1,49 @@
+# Override some defaults so BT stack is enabled
+
+# Enable Core Bluetooth Stack
+CONFIG_BT_ENABLED=y
+
+# Configure Bluetooth Controller Mode (BLE Only)
+CONFIG_BTDM_CTRL_MODE_BLE_ONLY=y
+
+# Configure Bluetooth Controller Mode (Disable Classic Bluetooth [BR/EDR])
+CONFIG_BTDM_CTRL_MODE_BR_EDR_ONLY=n
+
+# Configure Dual-Mode Bluetooth Controller Mode (Disable Dual-Mode)
+CONFIG_BTDM_CTRL_MODE_BTDM=n
+
+# Configure Dual-Mode Bluetooth Controller Modem Sleep (Disabled Sleep)
+CONFIG_BTDM_MODEM_SLEEP=n
+
+# Filters duplicate packet during scanning for BLE Mesh advertising packets
+CONFIG_BTDM_SCAN_DUPL_TYPE_DATA_DEVICE=y
+CONFIG_BTDM_BLE_MESH_SCAN_DUPL_EN=y
+
+# Automatic GATT Server update conflicts with Provisioning
+CONFIG_BT_GATTS_SEND_SERVICE_CHANGE_MANUAL=y
+
+# Sets stack size Bluetooth Upper Layer
+CONFIG_BT_BTU_TASK_STACK_SIZE=4512
+
+
+
+
+
+# Override some defaults of ESP BLE Mesh
+
+# Enable BLE Mesh
+CONFIG_BLE_MESH=y
+
+# Allows this device to become a node
+CONFIG_BLE_MESH_NODE=y
+
+# Allows provisioner (phone) to provision this device over GATT
+CONFIG_BLE_MESH_PB_GATT=y
+
+# Sets maximum amount of segmented messages
+CONFIG_BLE_MESH_TX_SEG_MSG_COUNT=10
+CONFIG_BLE_MESH_RX_SEG_MSG_COUNT=10
+
+# Set partition table for 2MB Flash Size
+CONFIG_PARTITION_TABLE_SINGLE_APP=y
+# CONFIG_PARTITION_TABLE_CUSTOM is not set
