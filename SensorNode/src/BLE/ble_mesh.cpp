@@ -60,8 +60,23 @@ void getDeviceUUID(uint8_t *device_uuid) {
 
 
 
-
+static void rebootDevice(void *pvParameters) {
+    // Waits for 5 seconds before rebooting the device
+    vTaskDelay(pdMS_TO_TICKS(5000));
+    esp_restart();
+}
 
 void provisioningHandler(esp_ble_mesh_prov_cb_event_t event, esp_ble_mesh_prov_cb_param_t *param) {
-    
+    switch(event) {
+        case ESP_BLE_MESH_NODE_PROV_COMPLETE_EVT:
+            ESP_LOGI(TAG, "provisioned. addr: 0x%04x", param -> node_prov_complete.addr);
+            break;
+        case ESP_BLE_MESH_NODE_PROV_RESET_EVT:
+            ESP_LOGI(TAG, "reset.");
+            esp_ble_mesh_node_local_reset();
+            xTaskCreate(rebootDevice, "Reboot Device", 2048, NULL, 5, NULL);
+            break;
+        default:
+            break;
+    }   
 }

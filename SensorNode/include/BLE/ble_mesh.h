@@ -19,6 +19,9 @@
 // BLE Mesh definitions
 #include <esp_ble_mesh_defs.h>
 
+// BLE Mesh Networking API
+#include <esp_ble_mesh_networking_api.h>
+
 // Sets up BLE Bluedroid Host & Controller Stack
 esp_err_t setupBLEHC(void);
 
