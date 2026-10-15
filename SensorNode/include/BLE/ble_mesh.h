@@ -22,6 +22,9 @@
 // BLE Mesh Networking API
 #include <esp_ble_mesh_networking_api.h>
 
+// BLE Mesh Configuration Model API
+#include <esp_ble_mesh_config_model_api.h>
+
 // Sets up BLE Bluedroid Host & Controller Stack
 esp_err_t setupBLEHC(void);
 
@@ -30,5 +33,8 @@ void getDeviceUUID(uint8_t *device_uuid);
 
 // Check Device Provisioning State
 void provisioningHandler(esp_ble_mesh_prov_cb_event_t event, esp_ble_mesh_prov_cb_param_t *param);
+
+// Allows a device to be configured for the Mesh network
+void ble_configHandler(esp_ble_mesh_cfg_server_cb_event_t event, esp_ble_mesh_cfg_server_cb_param_t *param);
 
 #endif

@@ -90,3 +90,20 @@ void provisioningHandler(esp_ble_mesh_prov_cb_event_t event, esp_ble_mesh_prov_c
             break;
     }   
 }
+
+void ble_configHandler(esp_ble_mesh_cfg_server_cb_event_t event, esp_ble_mesh_cfg_server_cb_param_t *param){
+    // Handles BLE Mesh Configuration Server events
+    if(event == ESP_BLE_MESH_CFG_SERVER_STATE_CHANGE_EVT) {
+      
+        // Access the received configuration message opcode 
+        switch(param->ctx.recv_op){
+
+        // Detect when an AppKey is added      
+        case ESP_BLE_MESH_MODEL_OP_APP_KEY_ADD:
+            ESP_LOGI(TAG, "config: app key added");
+            break;
+        default:
+            break;
+      }  
+    }
+}
