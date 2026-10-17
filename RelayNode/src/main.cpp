@@ -3,14 +3,33 @@
 #include "nvs_flash.h"
 #include "ble_mesh.h"
 #include "app_ble.h"
+#include "led.h"
+
+
 
 // Keep the device UUID available throughout program execution.
 static uint8_t deviceUUID[16] = {0};
+
+
+static void attentionOn(void)
+{
+    updateLED(true);
+}
+
+static void attentionOff(void)
+{
+    updateLED(false);
+}
 
 extern "C" void app_main(void)
 {
     // Initialize the relay output to OFF.
     setupRelay();
+
+    // Connect Mesh attention events to the external LED.
+    setupLED();
+    attention_callbacks_t callbacks = {attentionOn, attentionOff};
+    attention_Handler(callbacks);
 
     // Initialize flash storage before starting Bluetooth.
     // Stop and report an error if initialization fails.
