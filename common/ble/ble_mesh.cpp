@@ -15,8 +15,10 @@ static const char *TAG = "BLE Mesh";
 esp_err_t setupBLEHC(void) {
     esp_err_t result;
 
-    // Free up Classic Bluetooth memory
+#if CONFIG_IDF_TARGET_ESP32
+    // Release Classic Bluetooth memory only on the classic ESP32.
     ESP_ERROR_CHECK(esp_bt_controller_mem_release(ESP_BT_MODE_CLASSIC_BT));
+#endif
 
     // Configure Bluetooth Controller (Default Config mode)
     esp_bt_controller_config_t bluetooth_config = BT_CONTROLLER_INIT_CONFIG_DEFAULT();
