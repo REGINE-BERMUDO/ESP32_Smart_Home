@@ -3,3 +3,9 @@
 .vscode/c_cpp_properties.json
 .vscode/launch.json
 .vscode/ipch
+
+# Keep local Wi-Fi credentials out of Git.
+/include/secrets.h
+
+# Ignore generated configuration backups.
+sdkconfig*.old
