@@ -42,6 +42,9 @@ CONFIG_BLE_MESH_NODE=y
 # Allows provisioner (phone) to provision this device over GATT
 CONFIG_BLE_MESH_PB_GATT=y
 
+# Activate Official Bluetooth SIG Models
+CONFIG_BLE_MESH_GENERIC_SERVER=y
+
 # Sets maximum amount of segmented messages
 CONFIG_BLE_MESH_TX_SEG_MSG_COUNT=10
 CONFIG_BLE_MESH_RX_SEG_MSG_COUNT=10
