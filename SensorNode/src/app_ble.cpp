@@ -11,18 +11,6 @@ static const char *TAG = "SensorNode";
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
 static uint8_t dev_uuid[16] = {0xdd, 0xdd};
 
 // Configuration Server Model Setup
@@ -77,6 +65,15 @@ static esp_ble_mesh_elem_t elements[] = {
     ESP_BLE_MESH_ELEMENT(0, root_models, ESP_BLE_MESH_MODEL_NONE)
 };
 
+
+
+
+
+
+
+
+
+
 static esp_ble_mesh_prov_t provision = {
     .uuid = dev_uuid,
     .output_size = 0,
@@ -88,6 +85,45 @@ static esp_ble_mesh_comp_t composition = {
     .elements = elements,
     .element_count = ARRAY_SIZE(elements)
 };
+
+
+
+
+
+
+
+
+
+
+static void generic_server_cb(esp_ble_mesh_generic_server_cb_event_t event, esp_ble_mesh_generic_server_cb_param_t *param) {
+    esp_ble_mesh_model_t *model = &root_models[1];
+    esp_ble_mesh_gen_onoff_srv_t *srv = &onoff_server_0;
+    esp_ble_mesh_msg_ctx_t *ctx = &param->ctx;
+
+    switch (event)
+    {
+    case ESP_BLE_MESH_GENERIC_SERVER_STATE_CHANGE_EVT:
+    case ESP_BLE_MESH_GENERIC_SERVER_RECV_SET_MSG_EVT:
+        if (param->ctx.recv_op == ESP_BLE_MESH_MODEL_OP_GEN_ONOFF_SET || param->ctx.recv_op == ESP_BLE_MESH_MODEL_OP_GEN_ONOFF_SET_UNACK) {
+            if (ctx->recv_op == ESP_BLE_MESH_MODEL_OP_GEN_ONOFF_SET) {
+                esp_ble_mesh_server_model_send_msg(model, ctx, ESP_BLE_MESH_MODEL_OP_GEN_ONOFF_STATUS, sizeof(srv->state.onoff), &srv->state.onoff);
+            }
+        }
+        break;
+    default:
+        ESP_LOGW(TAG, "unexpected event (%d)", event);
+        break;
+    }
+}
+
+void appble_update_state(bool onoff)
+{
+    esp_ble_mesh_model_t *model = &root_models[1];
+    esp_ble_mesh_gen_onoff_srv_t *srv = &onoff_server_0;
+
+    srv->state.onoff = onoff;
+    esp_ble_mesh_model_publish(model, ESP_BLE_MESH_MODEL_OP_GEN_ONOFF_STATUS, sizeof(srv->state.onoff), &srv->state.onoff, ROLE_NODE);
+}
 
 
 
@@ -121,7 +157,7 @@ void initializeBLEMesh(attention_callbacks_t cbs) {
     // Store BLE Mesh Callbacks
     esp_ble_mesh_register_prov_callback(provisioningHandler);
     esp_ble_mesh_register_config_server_callback(ble_configHandler);
-    esp_ble_mesh_register_generic_server_callback(?);
+    esp_ble_mesh_register_generic_server_callback(generic_server_cb);
     esp_ble_mesh_register_health_server_callback(health_EventHandler);
 
     // Initialize BLE Mesh Provisioning Capabilities Module
