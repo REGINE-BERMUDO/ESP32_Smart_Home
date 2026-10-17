@@ -62,3 +62,38 @@ static esp_ble_mesh_comp_t composition = {
 
 // Hold the provisioning settings; assign the UUID during setup.
 static esp_ble_mesh_prov_t provisioning = {};
+
+// Prepare the gateway identity and initialize its Mesh models.
+esp_err_t setupGatewayMesh(void)
+{
+    // Bluetooth must already be started before reading its address.
+    getDeviceUUID(deviceUUID);
+    provisioning.uuid = deviceUUID;
+
+    // Register the shared Mesh event handlers.
+    ESP_ERROR_CHECK(esp_ble_mesh_register_prov_callback(
+        provisioningHandler));
+    ESP_ERROR_CHECK(esp_ble_mesh_register_config_server_callback(
+        ble_configHandler));
+    ESP_ERROR_CHECK(esp_ble_mesh_register_health_server_callback(
+        health_EventHandler));
+
+        // Stop if Mesh initialization cannot be started.
+    esp_err_t result = esp_ble_mesh_init(&provisioning, &composition);
+    if (result != ESP_OK)
+    {
+        return result;
+    }
+
+    // Keep saved membership after a restart.
+    if (esp_ble_mesh_node_is_provisioned())
+    {
+        ESP_LOGI(TAG, "Restored gateway Mesh membership");
+        return ESP_OK;
+    }
+
+    // Allow the phone to provision a new gateway.
+    return esp_ble_mesh_node_prov_enable(
+        static_cast<esp_ble_mesh_prov_bearer_t>(
+            ESP_BLE_MESH_PROV_ADV | ESP_BLE_MESH_PROV_GATT));
+}
