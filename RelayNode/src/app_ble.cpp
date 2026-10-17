@@ -123,6 +123,13 @@ esp_err_t setupRelayMesh(uint8_t *deviceUUID)
         return result;
     }
 
+        // Keep restored membership without enabling provisioning again.
+    if (esp_ble_mesh_node_is_provisioned())
+    {
+        ESP_LOGI(TAG, "Restored existing Mesh membership");
+        return ESP_OK;
+    }
+    
     // Allow both provisioning methods using the required enum type.
     return esp_ble_mesh_node_prov_enable(
         static_cast<esp_ble_mesh_prov_bearer_t>(
