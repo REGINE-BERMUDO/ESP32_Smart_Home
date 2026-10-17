@@ -93,8 +93,7 @@ void provisioningHandler(esp_ble_mesh_prov_cb_event_t event, esp_ble_mesh_prov_c
         case ESP_BLE_MESH_NODE_PROV_RESET_EVT: 
             ESP_LOGI(TAG, "reset.");
 
-            // Resets the ESP32 Bluetooth Mesh node locally
-            esp_ble_mesh_node_local_reset();
+        
 
             // Creates a FreeRTOS task to reboot the device after a delay
             xTaskCreate(rebootDevice, "Reboot Device", 2048, NULL, 1, NULL); 
