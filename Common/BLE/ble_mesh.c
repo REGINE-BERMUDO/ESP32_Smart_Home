@@ -1,12 +1,18 @@
 #include "ble_mesh.h"
+#include <string.h>
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
+#include "esp_system.h"
 
 static const char *TAG = "BLE Mesh";
 
 esp_err_t setupBLEHC(void) {
     esp_err_t result;
 
-    // Free up Classic Bluetooth memory
+#if CONFIG_IDF_TARGET_ESP32
+    // Only classic ESP32 has Classic Bluetooth memory to release.
     ESP_ERROR_CHECK(esp_bt_controller_mem_release(ESP_BT_MODE_CLASSIC_BT));
+#endif
 
     // Configure Bluetooth Controller (Default Config mode)
     esp_bt_controller_config_t bluetooth_config = BT_CONTROLLER_INIT_CONFIG_DEFAULT();
@@ -49,7 +55,7 @@ void getDeviceUUID(uint8_t *device_uuid) {
         return;
     }
 
-    // Copies the Bluetooth Controller 16-byte UUID to the pointer address
+    // Copy the six-byte Bluetooth address into the 16-byte device UUID.
     memcpy(device_uuid + 2, esp_bt_dev_get_address(), BD_ADDR_LEN);
 }
 
