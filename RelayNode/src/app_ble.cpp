@@ -47,11 +47,17 @@ static esp_ble_mesh_health_srv_t healthServer = {
     },
 };
 
+// Reserve the client's publication buffer.
+ESP_BLE_MESH_MODEL_PUB_DEFINE(onoffClientPub, 2 + 1, ROLE_NODE);
+
+// Store the Generic OnOff Client's settings.
+static esp_ble_mesh_client_t onoffClient = {};
+
 // List the Mesh models provided by this node.
 static esp_ble_mesh_model_t rootModels[] = {
     ESP_BLE_MESH_MODEL_CFG_SRV(&configServer),
     ESP_BLE_MESH_MODEL_GEN_ONOFF_SRV(&onoffPub, &onoffServer),
-
+    ESP_BLE_MESH_MODEL_GEN_ONOFF_CLI(&onoffClientPub, &onoffClient),
     ESP_BLE_MESH_MODEL_HEALTH_SRV(&healthServer, &healthPub),
 };
 
@@ -92,6 +98,35 @@ static void relayServerHandler(
     }
 }
 
+// Receive OnOff Status messages published by the light sensor.
+static void relayClientHandler(
+    esp_ble_mesh_generic_client_cb_event_t event,
+    esp_ble_mesh_generic_client_cb_param_t *param)
+{
+    // Only handle successfully received publications.
+    if (event != ESP_BLE_MESH_GENERIC_CLIENT_PUBLISH_EVT ||
+        param->error_code != 0 || param->params == nullptr)
+    {
+        return;
+    }
+
+    // Ignore messages that are not OnOff Status.
+    if (param->params->opcode != ESP_BLE_MESH_MODEL_OP_GEN_ONOFF_STATUS)
+    {
+        return;
+    }
+
+    // Lab mapping: dark = ON, bright = OFF.
+    bool on = param->status_cb.onoff_status.present_onoff != 0;
+
+    setRelay(on);
+
+    // Keep the server's reported state consistent with the relay command.
+    onoffServer.state.onoff = on;
+
+    ESP_LOGI(TAG, "Published state commanded relay: %s", on ? "ON" : "OFF");
+}
+
 // Connect event handlers and initialize the Mesh stack.
 esp_err_t setupRelayMesh(uint8_t *deviceUUID)
 {
@@ -115,6 +150,10 @@ esp_err_t setupRelayMesh(uint8_t *deviceUUID)
     // Send Generic Server events to our relay-control handler.
     ESP_ERROR_CHECK(esp_ble_mesh_register_generic_server_callback(
         relayServerHandler));
+
+    // Send incoming sensor publications to our client handler.
+    ESP_ERROR_CHECK(esp_ble_mesh_register_generic_client_callback(
+        relayClientHandler));
 
     // Initialize Mesh before allowing provisioning.
     esp_err_t result = esp_ble_mesh_init(&provisioning, &composition);
