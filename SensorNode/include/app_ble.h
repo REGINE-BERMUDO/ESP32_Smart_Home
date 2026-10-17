@@ -4,7 +4,7 @@
 // Bluetooth SIG Company Identifier for Espressif Systems
 #define CID_ESP 0x02E5
 
-#include "Common/BLE/ble_mesh.h"
+#include "ble_mesh.h"
 #include <nvs_flash.h>
 
 // Initialize BLE Mesh

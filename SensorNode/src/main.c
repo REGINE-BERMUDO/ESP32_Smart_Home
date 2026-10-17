@@ -1,8 +1,8 @@
 #include "app_ble.h"
 #include "ldr.h"
-#include "Common/LED/led.h"
+#include "led.h"
 
-extern "C" void app_main() {
+void app_main() {
 
     
     setupLED();
