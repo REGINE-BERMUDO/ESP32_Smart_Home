@@ -87,19 +87,19 @@ static esp_ble_mesh_comp_t composition = {
 };
 
 
-void appble_update_state(bool onoff)
+esp_err_t appble_update_state(bool onoff)
 {
     esp_ble_mesh_model_t *model = &root_models[1];
     esp_ble_mesh_gen_onoff_srv_t *srv = &onoff_server_0;
 
     srv->state.onoff = onoff;
 
-    // Wait until the phone has provisioned and configured publication.
+    // Retry later until Mesh publication is configured.
     if (!esp_ble_mesh_node_is_provisioned() ||
         model->pub == NULL ||
-       model->pub->publish_addr == ESP_BLE_MESH_ADDR_UNASSIGNED)
+        model->pub->publish_addr == ESP_BLE_MESH_ADDR_UNASSIGNED)
     {
-        return;
+        return ESP_ERR_INVALID_STATE;
     }
 
     esp_err_t result = esp_ble_mesh_model_publish(
@@ -114,6 +114,8 @@ void appble_update_state(bool onoff)
         ESP_LOGW(TAG, "Sensor publication failed: %s",
                  esp_err_to_name(result));
     }
+
+    return result;
 }
 
 

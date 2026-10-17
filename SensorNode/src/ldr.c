@@ -4,21 +4,27 @@
 // Keeps previous ldrState to compare with current ldrState
 static bool ldrState_Prev = false;
 
-static void readLDR(void *pvParameters) {
-    // Records time of task initialization as reference for xtaskDelayUntil()
+static void readLDR(void *pvParameters)
+{
     TickType_t taskWakeTimeReference = xTaskGetTickCount();
+    bool hasPublished = false;
+    bool lastPublishedState = false;
 
-    while(true) {
-        // Prevents unnecessary updates by checking if ldrState changed
-        bool ldrState_Current = gpio_get_level(LDR_PIN);
-        if(ldrState_Current != ldrState_Prev) {
-            ldrState_Prev = ldrState_Current;
+    while (true)
+    {
+        bool currentState = gpio_get_level(LDR_PIN);
+        ldrState_Prev = currentState;
+
+        // Send the initial reading, then only light/dark changes.
+        if (!hasPublished || currentState != lastPublishedState)
+        {
+            if (appble_update_state(currentState) == ESP_OK)
+            {
+                lastPublishedState = currentState;
+                hasPublished = true;
+            }
         }
 
-        // Publish the latest reading every two seconds.
-        appble_update_state(ldrState_Current);
-
-        // Aligns task execution interval
         xTaskDelayUntil(&taskWakeTimeReference, pdMS_TO_TICKS(2000));
     }
 }
