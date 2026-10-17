@@ -1,6 +1,6 @@
 #include "app_ble.h"
 
-
+static const char *TAG = "SensorNode";
 
 
 
@@ -25,16 +25,36 @@
 
 static uint8_t dev_uuid[16] = {0xdd, 0xdd};
 
+// Configuration Server Model Setup
+static esp_ble_mesh_cfg_srv_t config_server = {
+    .relay = ESP_BLE_MESH_RELAY_DISABLED,
+    .beacon = ESP_BLE_MESH_BEACON_ENABLED,
+    .friend_state = ESP_BLE_MESH_FRIEND_NOT_SUPPORTED,
+    .gatt_proxy = ESP_BLE_MESH_GATT_PROXY_ENABLED,
+    .default_ttl = 7,
+    .net_transmit = ESP_BLE_MESH_TRANSMIT(2, 20),
+    .relay_retransmit = ESP_BLE_MESH_TRANSMIT(2, 20)
+};
+
+
+
+
+
+
+
+
+
+
 // Mesh Model Instance
 static esp_ble_mesh_model_t root_models[] = {
-    ESP_BLE_MESH_MODEL_CFG_SRV(?),
-    ESP_BLE_MESH_MODEL__GEN_ONOF_SRV(?),
+    ESP_BLE_MESH_MODEL_CFG_SRV(&config_server),
+    ESP_BLE_MESH_MODEL__GEN_ONOFF_SRV(?),
     ESP_BLE_MESH_MODEL_HEALTH_SRV(?)
 };
 
 // BLE Mesh Element Description
 static esp_ble_mesh_elem_t elements[] = {
-    ESP_BLE_MESH_ELEMENT(0, ?, ESP_BLE_MESH_MODEL_NONE)
+    ESP_BLE_MESH_ELEMENT(0, root_models, ESP_BLE_MESH_MODEL_NONE)
 };
 
 static esp_ble_mesh_prov_t provision = {
@@ -48,6 +68,15 @@ static esp_ble_mesh_comp_t composition = {
     .elements = elements,
     .element_count = ARRAY_SIZE(elements)
 };
+
+
+
+
+
+
+
+
+
 
 void initializeBLEMesh(attention_callbacks_t cbs) {
     // Set Initial attention LED State
@@ -67,23 +96,23 @@ void initializeBLEMesh(attention_callbacks_t cbs) {
     }
 
     // Get device UUID for Mesh Provisioning
-    getDeviceUUID(?);
+    getDeviceUUID(dev_uuid);
 
     // Store BLE Mesh Callbacks
-    esp_ble_mesh_register_prov_callback(?);
-    esp_ble_mesh_register_config_server_callback(?);
+    esp_ble_mesh_register_prov_callback(provisioningHandler);
+    esp_ble_mesh_register_config_server_callback(ble_configHandler);
     esp_ble_mesh_register_generic_server_callback(?);
-    esp_ble_mesh_register_health_server_callback(?);
+    esp_ble_mesh_register_health_server_callback(health_EventHandler);
 
     // Initialize BLE Mesh Provisioning Capabilities Module
     if(esp_ble_mesh_init(&provision, &composition) != ESP_OK) {
-        ?
+        ESP_LOGE(TAG, "Failed to Initialize Mesh Module");
         return;
     }
 
     // Enable Provisioning Bearers (PB_ADV & PB_GATT)
     if(esp_ble_mesh_node_prov_enable(ESP_BLE_MESH_PROV_ADV | ESP_BLE_MESH_PROV_GATT) != ESP_OK) {
-        ?
+        ESP_LOGE(TAG, "Failed to Enable node Provisioning Bearers");
         return;
     }
 }
