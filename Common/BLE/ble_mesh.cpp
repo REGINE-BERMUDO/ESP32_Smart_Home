@@ -1,4 +1,4 @@
-#include "BLE/ble_mesh.h"
+#include "Common/BLE/ble_mesh.h"
 
 static const char *TAG = "BLE Mesh";
 

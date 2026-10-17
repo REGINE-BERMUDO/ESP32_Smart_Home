@@ -19,6 +19,12 @@
 // BLE Mesh definitions
 #include <esp_ble_mesh_defs.h>
 
+// BLE Mesh Offical Bluetooth SIG Models API
+#include <esp_ble_mesh_generic_model_api.h>
+
+// BLE Mesh Module Initialize and De-entitialize API
+#include <esp_ble_mesh_common_api.h>
+
 // BLE Mesh Networking API
 #include <esp_ble_mesh_networking_api.h>
 
@@ -27,6 +33,9 @@
 
 // BLE Mesh Health Model API
 #include <esp_ble_mesh_health_model_api.h>
+
+// BLE Mesh Provisioning Protocol API
+#include "esp_ble_mesh_provisioning_api.h"
 
 // Sets up BLE Bluedroid Host & Controller Stack
 esp_err_t setupBLEHC(void);
