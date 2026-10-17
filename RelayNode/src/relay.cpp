@@ -9,7 +9,11 @@ void setupRelay(void) {
         .intr_type = GPIO_INTR_DISABLE       
     };
     
+    // Prepare HIGH (OFF) before enabling the output.
+    gpio_set_level(RELAY_PIN, 1);
+    
     gpio_config(&config); 
+   
 }
 
 
