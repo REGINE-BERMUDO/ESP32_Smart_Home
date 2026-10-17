@@ -36,23 +36,29 @@ static esp_ble_mesh_cfg_srv_t config_server = {
     .relay_retransmit = ESP_BLE_MESH_TRANSMIT(2, 20)
 };
 
-
-
-
-
-
-
-
-
 // Define Model Publication context
 ESP_BLE_MESH_MODEL_PUB_DEFINE(onoff_pub_0, 2 + 3, ROLE_NODE);
-
 // User Data of Generic OnOff Server Model
 static esp_ble_mesh_gen_onoff_srv_t onoff_server_0 = {
     .rsp_ctrl.get_auto_rsp = ESP_BLE_MESH_SERVER_AUTO_RSP,
     .rsp_ctrl.set_auto_rsp = ESP_BLE_MESH_SERVER_RSP_BY_APP,
     .rsp_ctrl.status_auto_rsp = ESP_BLE_MESH_SERVER_AUTO_RSP
 };
+
+static uint8_t test_ids[] = {0, 1, 2};
+
+ESP_BLE_MESH_MODEL_PUB_DEFINE(health_pub_0, 10, ROLE_NODE);
+static esp_ble_mesh_health_srv_t health_server = {
+    .health_test = {
+        .id_count = ARRAY_SIZE(test_ids),
+        .test_ids = test_ids,
+        .company_id = CID_ESP
+    }
+};
+
+
+
+
 
 
 
@@ -63,7 +69,7 @@ static esp_ble_mesh_gen_onoff_srv_t onoff_server_0 = {
 static esp_ble_mesh_model_t root_models[] = {
     ESP_BLE_MESH_MODEL_CFG_SRV(&config_server),
     ESP_BLE_MESH_MODEL_GEN_ONOFF_SRV(&onoff_pub_0, &onoff_server_0),
-    ESP_BLE_MESH_MODEL_HEALTH_SRV(?)
+    ESP_BLE_MESH_MODEL_HEALTH_SRV(&health_server, &health_pub_0)
 };
 
 // BLE Mesh Element Description
