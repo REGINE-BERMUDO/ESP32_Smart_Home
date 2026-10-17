@@ -1,0 +1,7 @@
+{
+  "name": "LED",
+  "version": "1.0.0",
+  "description": "Shared ESP32 helper functions",
+  "frameworks": "espidf",
+  "platforms": "espressif32"
+}
