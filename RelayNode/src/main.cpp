@@ -3,6 +3,9 @@
 #include "nvs_flash.h"
 #include "ble_mesh.h"
 
+// Keep the device UUID available throughout program execution.
+static uint8_t deviceUUID[16] = {0};
+
 extern "C" void app_main(void)
 {
     // Initialize the relay output to OFF.
@@ -17,6 +20,12 @@ extern "C" void app_main(void)
 
     // Report successful Bluetooth startup.
     ESP_LOGI("relay", "Bluetooth started");
+
+    // Copy the Bluetooth address into part of the device UUID.
+    getDeviceUUID(deviceUUID);
+
+    // Display all 16 bytes for verification.
+    ESP_LOG_BUFFER_HEX("device_uuid", deviceUUID, sizeof(deviceUUID));
 
     // Report startup without automatically switching the relay.
     ESP_LOGI("relay", "Relay output initialized to OFF");
