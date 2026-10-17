@@ -5,6 +5,7 @@
 #include "esp_event.h"
 #include "esp_netif.h"
 #include "esp_log.h"
+#include "app_web.h"
 
 // Label messages printed by this module.
 static const char *TAG = "gateway_wifi";
@@ -35,6 +36,9 @@ static void wifiEventHandler(
             static_cast<ip_event_got_ip_t *>(eventData);
 
         ESP_LOGI(TAG, "Gateway IP: " IPSTR, IP2STR(&event->ip_info.ip));
+        
+        // Start the web server once we have an IP address.
+        setupWeb();
     }
 }
 
