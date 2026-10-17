@@ -1,5 +1,5 @@
 #include "app_web.h"
-
+#include "app_ble.h"
 #include "esp_http_server.h"
 #include "esp_log.h"
 
@@ -26,32 +26,48 @@ static esp_err_t homeHandler(httpd_req_t *request)
         "<form action='/off' method='post'>"
         "<button type='submit'>OFF</button>"
         "</form>"
-        "<p>Mesh control is not connected yet.</p>"
+        "<p>Buttons send relay commands over Bluetooth Mesh.</p>"
         "</body></html>";
 
     httpd_resp_set_type(request, "text/html");
     return httpd_resp_send(request, page, HTTPD_RESP_USE_STRLEN);
 }   
 
-// Record an ON request without controlling the relay yet.
+// Send the web button's ON command over Mesh.
 static esp_err_t onHandler(httpd_req_t *request)
 {
-    ESP_LOGI(TAG, "Web button requested ON");
+    esp_err_t result = sendRelayCommand(true);
+    if (result != ESP_OK)
+    {
+        ESP_LOGE(TAG, "ON send failed: %s", esp_err_to_name(result));
+          httpd_resp_set_status(request, "503 Service Unavailable");
+          return httpd_resp_send(
+            request, "Cannot send the Mesh command.",
+            HTTPD_RESP_USE_STRLEN);
+    }
 
+    ESP_LOGI(TAG, "Web ON command accepted for sending");
     return httpd_resp_send(
-        request,
-        "ON request received. Mesh control is not connected yet.",
+        request, "ON command queued. Return to use the controls.",
         HTTPD_RESP_USE_STRLEN);
 }
 
-// Record an OFF request without controlling the relay yet.
+// Send the web button's OFF command over Mesh.
 static esp_err_t offHandler(httpd_req_t *request)
 {
-    ESP_LOGI(TAG, "Web button requested OFF");
+    esp_err_t result = sendRelayCommand(false);
+    if (result != ESP_OK)
+    {
+        ESP_LOGE(TAG, "OFF send failed: %s", esp_err_to_name(result));
+      httpd_resp_set_status(request, "503 Service Unavailable");
+      return httpd_resp_send(
+        request, "Cannot send the Mesh command.",
+        HTTPD_RESP_USE_STRLEN);
+    }
 
+    ESP_LOGI(TAG, "Web OFF command accepted for sending");
     return httpd_resp_send(
-        request,
-        "OFF request received. Mesh control is not connected yet.",
+        request, "OFF command queued. Return to use the controls.",
         HTTPD_RESP_USE_STRLEN);
 }
 
