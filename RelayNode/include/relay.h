@@ -7,4 +7,7 @@
 
 void setupRelay(void);
 
+// Control the relay: true means ON, false means OFF.
+void setRelay(bool on);
+
 #endif // RELAY_H

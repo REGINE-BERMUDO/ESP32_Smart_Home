@@ -11,3 +11,11 @@ void setupRelay(void) {
     
     gpio_config(&config); 
 }
+
+
+// Control the relay using its signal pin.
+// Assumes HIGH turns it ON; hardware testing is still needed.
+void setRelay(bool on)
+{
+    gpio_set_level(RELAY_PIN, on ? 1 : 0);
+}
