@@ -73,6 +73,24 @@ static esp_ble_mesh_comp_t composition = {
 // We will assign the device UUID during setup.
 static esp_ble_mesh_prov_t provisioning = {};
 
+// Apply incoming Mesh OnOff changes to relay channel 1.
+static void relayServerHandler(
+    esp_ble_mesh_generic_server_cb_event_t event,
+    esp_ble_mesh_generic_server_cb_param_t *param)
+{
+    if (event == ESP_BLE_MESH_GENERIC_SERVER_STATE_CHANGE_EVT)
+    {
+        // Handle both acknowledged and unacknowledged ON/OFF commands.
+        if (param->ctx.recv_op == ESP_BLE_MESH_MODEL_OP_GEN_ONOFF_SET ||
+            param->ctx.recv_op == ESP_BLE_MESH_MODEL_OP_GEN_ONOFF_SET_UNACK)
+        {
+            bool on = param->value.state_change.onoff_set.onoff != 0;
+
+            setRelay(on);
+            ESP_LOGI(TAG, "Mesh commanded relay: %s", on ? "ON" : "OFF");
+        }
+    }
+}
 
 // Connect event handlers and initialize the Mesh stack.
 esp_err_t setupRelayMesh(uint8_t *deviceUUID)
@@ -93,6 +111,10 @@ esp_err_t setupRelayMesh(uint8_t *deviceUUID)
         ble_configHandler));
     ESP_ERROR_CHECK(esp_ble_mesh_register_health_server_callback(
         health_EventHandler));
+
+    // Send Generic Server events to our relay-control handler.
+    ESP_ERROR_CHECK(esp_ble_mesh_register_generic_server_callback(
+        relayServerHandler));
 
     // Initialize Mesh before allowing provisioning.
     esp_err_t result = esp_ble_mesh_init(&provisioning, &composition);
