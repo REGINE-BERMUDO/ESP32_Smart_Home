@@ -13,9 +13,8 @@ void setupRelay(void) {
 }
 
 
-// Control the relay using its signal pin.
-// Assumes HIGH turns it ON; hardware testing is still needed.
+// Control channel 1: LOW turns it ON, HIGH turns it OFF.
 void setRelay(bool on)
 {
-    gpio_set_level(RELAY_PIN, on ? 1 : 0);
+    gpio_set_level(RELAY_PIN, on ? 0 : 1);
 }
