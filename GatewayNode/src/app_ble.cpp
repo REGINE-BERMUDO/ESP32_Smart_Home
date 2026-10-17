@@ -18,7 +18,7 @@ ESP_BLE_MESH_MODEL_PUB_DEFINE(onoffClientPub, 2 + 1, ROLE_NODE);
 static esp_ble_mesh_client_t onoffClient = {};
 
 // RelayNode's current provisioned address.
-static constexpr uint16_t relayAddress = 0x0003;
+static constexpr uint16_t relayAddress = 0x0009;
 
 // Identify successive OnOff commands.
 static uint8_t transactionID = 0;
