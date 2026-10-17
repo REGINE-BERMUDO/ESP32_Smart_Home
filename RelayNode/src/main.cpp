@@ -2,6 +2,7 @@
 #include "esp_log.h"
 #include "nvs_flash.h"
 #include "ble_mesh.h"
+#include "app_ble.h"
 
 // Keep the device UUID available throughout program execution.
 static uint8_t deviceUUID[16] = {0};
@@ -26,6 +27,12 @@ extern "C" void app_main(void)
 
     // Display all 16 bytes for verification.
     ESP_LOG_BUFFER_HEX("device_uuid", deviceUUID, sizeof(deviceUUID));
+
+    // Initialize Mesh and enable provisioning.
+    ESP_ERROR_CHECK(setupRelayMesh(deviceUUID));
+
+    // Report that Mesh setup completed.
+    ESP_LOGI("relay", "Mesh initialized");
 
     // Report startup without automatically switching the relay.
     ESP_LOGI("relay", "Relay output initialized to OFF");

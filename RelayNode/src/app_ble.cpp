@@ -36,8 +36,16 @@ static esp_ble_mesh_cfg_srv_t configServer = {
 // Reserve a Health Status message buffer with no fault entries.
 ESP_BLE_MESH_HEALTH_PUB_DEFINE(healthPub, 0, ROLE_NODE);
 
-// Start with zero-initialized Health Server settings.
-static esp_ble_mesh_health_srv_t healthServer = {};
+// Declare one Health test identifier, as in Espressif's example.
+static uint8_t healthTestIDs[] = {0x00};
+
+// Provide the test list required by the Health Server.
+static esp_ble_mesh_health_srv_t healthServer = {
+    .health_test = {
+        .id_count = 1,
+        .test_ids = healthTestIDs,
+    },
+};
 
 // List the Mesh models provided by this node.
 static esp_ble_mesh_model_t rootModels[] = {
@@ -47,3 +55,54 @@ static esp_ble_mesh_model_t rootModels[] = {
     ESP_BLE_MESH_MODEL_HEALTH_SRV(&healthServer, &healthPub),
 };
 
+// Group our models into one addressable Mesh element.
+static esp_ble_mesh_elem_t elements[] = {
+    ESP_BLE_MESH_ELEMENT(
+        0, rootModels, ESP_BLE_MESH_MODEL_NONE
+    ),
+};
+
+// Describe the node's elements for Mesh initialization.
+static esp_ble_mesh_comp_t composition = {
+    .cid = 0x02E5,
+    .element_count = sizeof(elements) / sizeof(elements[0]),
+    .elements = elements,
+};
+
+// Keep provisioning settings available while Mesh is running.
+// We will assign the device UUID during setup.
+static esp_ble_mesh_prov_t provisioning = {};
+
+
+// Connect event handlers and initialize the Mesh stack.
+esp_err_t setupRelayMesh(uint8_t *deviceUUID)
+{
+    // Reject a missing UUID buffer.
+    if (deviceUUID == nullptr)
+    {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    // Use the UUID prepared in main.cpp.
+    provisioning.uuid = deviceUUID;
+
+    // Register the shared event handlers.
+    ESP_ERROR_CHECK(esp_ble_mesh_register_prov_callback(
+        provisioningHandler));
+    ESP_ERROR_CHECK(esp_ble_mesh_register_config_server_callback(
+        ble_configHandler));
+    ESP_ERROR_CHECK(esp_ble_mesh_register_health_server_callback(
+        health_EventHandler));
+
+    // Initialize Mesh before allowing provisioning.
+    esp_err_t result = esp_ble_mesh_init(&provisioning, &composition);
+    if (result != ESP_OK)
+    {
+        return result;
+    }
+
+    // Allow both provisioning methods using the required enum type.
+    return esp_ble_mesh_node_prov_enable(
+        static_cast<esp_ble_mesh_prov_bearer_t>(
+            ESP_BLE_MESH_PROV_ADV | ESP_BLE_MESH_PROV_GATT));
+}
