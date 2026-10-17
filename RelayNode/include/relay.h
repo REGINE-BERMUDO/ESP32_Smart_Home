@@ -3,7 +3,8 @@
 
 #include <driver/gpio.h>
 
-#define RELAY_PIN GPIO_NUM_22
+// GPIO27 controls relay channel 1 through IN1.
+#define RELAY_PIN GPIO_NUM_27
 
 void setupRelay(void);
 
