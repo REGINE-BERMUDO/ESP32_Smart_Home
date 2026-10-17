@@ -10,4 +10,7 @@
 // Initialize BLE Mesh
 void initializeBLEMesh(attention_callbacks_t cbs);
 
+// Update and publish the sensor's OnOff state.
+void appble_update_state(bool onoff);
+
 #endif // APP_BLE_H

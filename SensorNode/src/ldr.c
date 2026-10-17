@@ -1,4 +1,5 @@
 #include "ldr.h"
+#include "app_ble.h"
 
 // Keeps previous ldrState to compare with current ldrState
 static bool ldrState_Prev = false;
@@ -13,6 +14,9 @@ static void readLDR(void *pvParameters) {
         if(ldrState_Current != ldrState_Prev) {
             ldrState_Prev = ldrState_Current;
         }
+
+        // Publish the latest reading every two seconds.
+        appble_update_state(ldrState_Current);
 
         // Aligns task execution interval
         xTaskDelayUntil(&taskWakeTimeReference, pdMS_TO_TICKS(2000));

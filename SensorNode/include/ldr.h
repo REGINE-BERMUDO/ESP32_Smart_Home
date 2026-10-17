@@ -2,7 +2,7 @@
 #define LDR_H
 
 // Rename GPIO_NUM_23 to LDR_PIN
-#define LDR_PIN GPIO_NUM_23
+#define LDR_PIN GPIO_NUM_27
 
 // For GPIO Setup
 #include <driver/gpio.h>
