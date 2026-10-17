@@ -44,11 +44,25 @@ static esp_ble_mesh_cfg_srv_t config_server = {
 
 
 
+// Define Model Publication context
+ESP_BLE_MESH_MODEL_PUB_DEFINE(onoff_pub_0, 2 + 3, ROLE_NODE);
+
+// User Data of Generic OnOff Server Model
+static esp_ble_mesh_gen_onoff_srv_t onoff_server_0 = {
+    .rsp_ctrl.get_auto_rsp = ESP_BLE_MESH_SERVER_AUTO_RSP,
+    .rsp_ctrl.set_auto_rsp = ESP_BLE_MESH_SERVER_RSP_BY_APP,
+    .rsp_ctrl.status_auto_rsp = ESP_BLE_MESH_SERVER_AUTO_RSP
+};
+
+
+
+
+
 
 // Mesh Model Instance
 static esp_ble_mesh_model_t root_models[] = {
     ESP_BLE_MESH_MODEL_CFG_SRV(&config_server),
-    ESP_BLE_MESH_MODEL__GEN_ONOFF_SRV(?),
+    ESP_BLE_MESH_MODEL_GEN_ONOFF_SRV(&onoff_pub_0, &onoff_server_0),
     ESP_BLE_MESH_MODEL_HEALTH_SRV(?)
 };
 
