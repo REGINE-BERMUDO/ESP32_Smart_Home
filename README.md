@@ -1,6 +1,9 @@
 # Description
 
 # References
+#### Learning Material/s:
+- https://github.com/espressif/esp-idf/tree/master/components/bt/esp_ble_mesh
+
 #### Project Reference:
 - https://github.com/PacktPublishing/Internet-of-Things-with-ESP32/tree/main/ch9
 
