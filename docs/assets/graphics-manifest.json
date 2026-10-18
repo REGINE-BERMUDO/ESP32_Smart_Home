@@ -1,0 +1,82 @@
+{
+  "hero": "readme-banner.png, original approved monochrome artwork, preserved without edits",
+  "font": "Actual Inter outlines in badge lettering; GitHub controls README body typography",
+  "badge_count": 12,
+  "section_icons": 8,
+  "finish": "Static grayscale glass surfaces, silver rim, reflection, and soft white halo",
+  "logos": "Simple Icons technology marks; Lucide for generic Wi-Fi, section, and verification symbols",
+  "badges": [
+    {
+      "file": "esp32.svg",
+      "label": "ESP32",
+      "value": "Classic",
+      "icon": "espressif"
+    },
+    {
+      "file": "esp32-s3.svg",
+      "label": "ESP32-S3",
+      "value": "Gateway",
+      "icon": "espressif"
+    },
+    {
+      "file": "esp-idf.svg",
+      "label": "ESP-IDF",
+      "value": "6.1",
+      "icon": "espressif"
+    },
+    {
+      "file": "platformio.svg",
+      "label": "PlatformIO",
+      "value": "Build",
+      "icon": "platformio"
+    },
+    {
+      "file": "ble-mesh.svg",
+      "label": "Bluetooth",
+      "value": "Mesh",
+      "icon": "bluetooth"
+    },
+    {
+      "file": "wifi.svg",
+      "label": "Wi-Fi",
+      "value": "2.4 GHz",
+      "icon": "wifi"
+    },
+    {
+      "file": "firmware.svg",
+      "label": "Firmware",
+      "value": "C / C++",
+      "icon": "cplusplus"
+    },
+    {
+      "file": "web.svg",
+      "label": "Dashboard",
+      "value": "HTML / CSS / JS",
+      "icon": "web-stack"
+    },
+    {
+      "file": "builds.svg",
+      "label": "Recorded builds",
+      "value": "3 passed",
+      "icon": "wrench"
+    },
+    {
+      "file": "browser-tests.svg",
+      "label": "Browser tests",
+      "value": "24 passed",
+      "icon": "flask-conical"
+    },
+    {
+      "file": "native-checks.svg",
+      "label": "Native checks",
+      "value": "3 passed",
+      "icon": "shield-check"
+    },
+    {
+      "file": "hardware.svg",
+      "label": "Core hardware",
+      "value": "Verified",
+      "icon": "circle-check"
+    }
+  ]
+}

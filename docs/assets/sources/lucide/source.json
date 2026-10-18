@@ -1,0 +1,25 @@
+{
+  "repository": "https://github.com/lucide-icons/lucide",
+  "commit": "1ef60af944de207e0d5176905a0759ba12e6ee8d",
+  "icons": [
+    "house",
+    "cpu",
+    "wifi",
+    "bluetooth",
+    "sun",
+    "power",
+    "layers",
+    "terminal",
+    "flask-conical",
+    "circle-check",
+    "network",
+    "camera",
+    "wrench",
+    "book-open",
+    "file-code",
+    "zap",
+    "shield-check",
+    "monitor",
+    "code-xml"
+  ]
+}

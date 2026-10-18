@@ -1,0 +1,56 @@
+{
+  "repository": "https://github.com/simple-icons/simple-icons",
+  "commit": "4d29a35c954699b389a834aacc97dd6e7e74143c",
+  "icons": [
+    "espressif",
+    "platformio",
+    "bluetooth",
+    "cplusplus",
+    "html5",
+    "css",
+    "javascript"
+  ],
+  "metadata": [
+    {
+      "title": "Bluetooth",
+      "hex": "0082FC",
+      "source": "https://www.bluetooth.com/develop-with-bluetooth/marketing-branding",
+      "guidelines": "https://www.bluetooth.com/develop-with-bluetooth/marketing-branding"
+    },
+    {
+      "title": "C++",
+      "hex": "00599C",
+      "source": "https://github.com/isocpp/logos/tree/64ef037049f87ac74875dbe72695e59118b52186"
+    },
+    {
+      "title": "CSS",
+      "hex": "663399",
+      "source": "https://github.com/CSS-Next/logo.css/blob/bacc20878227204b283c68a6b935f8279e06b0cd/css.svg",
+      "guidelines": "https://github.com/CSS-Next/logo.css"
+    },
+    {
+      "title": "Espressif",
+      "hex": "E7352C",
+      "source": "https://www.espressif.com"
+    },
+    {
+      "title": "HTML5",
+      "hex": "E34F26",
+      "source": "https://www.w3.org/html/logo/"
+    },
+    {
+      "title": "JavaScript",
+      "hex": "F7DF1E",
+      "source": "https://github.com/voodootikigod/logo.js/blob/1544bdeed6d618a6cfe4f0650d04ab8d9cfa76d9/js.svg",
+      "license": {
+        "type": "MIT"
+      }
+    },
+    {
+      "title": "PlatformIO",
+      "hex": "F5822A",
+      "source": "https://piolabs.com",
+      "guidelines": "https://piolabs.com/legal/trademarks.html#use-of-logos"
+    }
+  ]
+}
