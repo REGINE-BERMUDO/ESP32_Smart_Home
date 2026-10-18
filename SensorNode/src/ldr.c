@@ -1,31 +1,53 @@
 #include "ldr.h"
 #include "app_ble.h"
+#include <stdatomic.h>
 
 // Keeps previous ldrState to compare with current ldrState
-static bool ldrState_Prev = false;
+static atomic_bool ldrState_Prev = false;
 
 static void readLDR(void *pvParameters)
 {
     TickType_t taskWakeTimeReference = xTaskGetTickCount();
     bool hasPublished = false;
     bool lastPublishedState = false;
+    bool candidate = gpio_get_level(LDR_PIN);
+    unsigned matchingSamples = 0;
+    bool retryWaiting = false;
+    TickType_t lastAttempt = 0;
 
     while (true)
     {
-        bool currentState = gpio_get_level(LDR_PIN);
-        ldrState_Prev = currentState;
-
-        // Send the initial reading, then only light/dark changes.
-        if (!hasPublished || currentState != lastPublishedState)
+        const bool reading = gpio_get_level(LDR_PIN);
+        if (reading != candidate)
         {
-            if (appble_update_state(currentState) == ESP_OK)
+            candidate = reading;
+            matchingSamples = 1;
+        }
+        else if (matchingSamples < 4)
+        {
+            ++matchingSamples;
+        }
+
+        // Four readings 50 ms apart reject threshold chatter without a 2 s wait.
+        if (matchingSamples == 4)
+        {
+            atomic_store(&ldrState_Prev, candidate);
+            const TickType_t now = xTaskGetTickCount();
+            if ((!hasPublished || candidate != lastPublishedState) &&
+                (!retryWaiting || now - lastAttempt >= pdMS_TO_TICKS(500)))
             {
-                lastPublishedState = currentState;
-                hasPublished = true;
+                lastAttempt = now;
+                retryWaiting = appble_update_state(candidate) != ESP_OK;
+                if (!retryWaiting)
+                {
+                    lastPublishedState = candidate;
+                    hasPublished = true;
+                    ESP_LOGI("ldr", "Stable light published: %s", candidate ? "dark / ON" : "bright / OFF");
+                }
             }
         }
 
-        xTaskDelayUntil(&taskWakeTimeReference, pdMS_TO_TICKS(2000));
+        xTaskDelayUntil(&taskWakeTimeReference, pdMS_TO_TICKS(50));
     }
 }
 
@@ -40,12 +62,15 @@ void setupLDR(void) {
     };
 
     // Initialize LDR Pin Configuration
-    gpio_config(&config);
+    ESP_ERROR_CHECK(gpio_config(&config));
 
     // Let FreeRTOS Task manage readLDR function
-    xTaskCreate(readLDR, "LDR Module", 2048, NULL, 5, NULL);
+    if (xTaskCreate(readLDR, "LDR Module", 2048, NULL, 5, NULL) != pdPASS)
+    {
+        ESP_ERROR_CHECK(ESP_ERR_NO_MEM);
+    }
 }
 
 bool sendLDR(void) {
-    return ldrState_Prev;
+    return atomic_load(&ldrState_Prev);
 }

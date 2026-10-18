@@ -11,4 +11,7 @@ esp_err_t setupGatewayMesh(void);
 // not that the physical relay has confirmed switching.
 esp_err_t sendRelayCommand(bool on);
 
+// Return a fresh RelayNode report, or false when its state is unavailable.
+bool getRelayReportedState(bool *on);
+
 #endif

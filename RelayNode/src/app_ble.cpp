@@ -1,6 +1,9 @@
 #include "app_ble.h"
 #include "ble_mesh.h"
 #include "relay.h"
+#include "lab_mesh_addresses.h"
+#include "esp_timer.h"
+#include "state_reporter.h"
 
 #include "esp_ble_mesh_common_api.h"
 #include "esp_ble_mesh_provisioning_api.h"
@@ -79,11 +82,28 @@ static esp_ble_mesh_comp_t composition = {
 // We will assign the device UUID during setup.
 static esp_ble_mesh_prov_t provisioning = {};
 
+static void reportRelayState(void)
+{
+    esp_ble_mesh_model_t *model = &rootModels[1];
+    if (!esp_ble_mesh_node_is_provisioned() || model->keys[0] == ESP_BLE_MESH_KEY_UNUSED) return;
+
+    esp_ble_mesh_msg_ctx_t destination = {};
+    destination.net_idx = 0;
+    destination.app_idx = model->keys[0];
+    destination.addr = LAB_MESH_GATEWAY_ADDRESS;
+    destination.send_ttl = 7;
+    uint8_t state = getRelay() ? 1 : 0;
+    const esp_err_t result = esp_ble_mesh_server_model_send_msg(model, &destination,
+        ESP_BLE_MESH_MODEL_OP_GEN_ONOFF_STATUS, sizeof(state), &state);
+    if (result != ESP_OK) ESP_LOGW(TAG, "Relay report send failed: %s", esp_err_to_name(result));
+}
+
 // Apply incoming Mesh OnOff changes to relay channel 1.
 static void relayServerHandler(
     esp_ble_mesh_generic_server_cb_event_t event,
     esp_ble_mesh_generic_server_cb_param_t *param)
 {
+    if (param == nullptr) return;
     if (event == ESP_BLE_MESH_GENERIC_SERVER_STATE_CHANGE_EVT)
     {
         // Handle both acknowledged and unacknowledged ON/OFF commands.
@@ -93,6 +113,8 @@ static void relayServerHandler(
             bool on = param->value.state_change.onoff_set.onoff != 0;
 
             setRelay(on);
+            reportRelayState();
+            requestStateReportRepeats();
             ESP_LOGI(TAG, "Mesh commanded relay: %s", on ? "ON" : "OFF");
         }
     }
@@ -104,8 +126,9 @@ static void relayClientHandler(
     esp_ble_mesh_generic_client_cb_param_t *param)
 {
     // Only handle successfully received publications.
-    if (event != ESP_BLE_MESH_GENERIC_CLIENT_PUBLISH_EVT ||
-        param->error_code != 0 || param->params == nullptr)
+    if (param == nullptr || event != ESP_BLE_MESH_GENERIC_CLIENT_PUBLISH_EVT ||
+        param->error_code != 0 || param->params == nullptr ||
+        param->params->ctx.addr != LAB_MESH_SENSOR_ADDRESS)
     {
         return;
     }
@@ -119,10 +142,21 @@ static void relayClientHandler(
     // Lab mapping: dark = ON, bright = OFF.
     bool on = param->status_cb.onoff_status.present_onoff != 0;
 
+    // Publication retransmissions must not replay an old reading over a web command.
+    static bool previousSensorState = false;
+    static int64_t previousSensorAt = 0;
+    const int64_t now = esp_timer_get_time();
+    if (previousSensorAt != 0 && previousSensorState == on &&
+        now - previousSensorAt < 1000000) return;
+    previousSensorState = on;
+    previousSensorAt = now;
+
     setRelay(on);
 
     // Keep the server's reported state consistent with the relay command.
     onoffServer.state.onoff = on;
+    reportRelayState();
+    requestStateReportRepeats();
 
     ESP_LOGI(TAG, "Published state commanded relay: %s", on ? "ON" : "OFF");
 }
@@ -162,7 +196,10 @@ esp_err_t setupRelayMesh(uint8_t *deviceUUID)
         return result;
     }
 
-        // Keep restored membership without enabling provisioning again.
+    result = setupStateReporter(reportRelayState);
+    if (result != ESP_OK) return result;
+
+    // Keep restored membership without enabling provisioning again.
     if (esp_ble_mesh_node_is_provisioned())
     {
         ESP_LOGI(TAG, "Restored existing Mesh membership");

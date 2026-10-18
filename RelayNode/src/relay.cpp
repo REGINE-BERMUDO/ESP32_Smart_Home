@@ -1,7 +1,8 @@
 #include "relay.h"
+#include <atomic>
 
 // Remember the last commanded relay state.
-static bool relayState = false;
+static std::atomic<bool> relayState{false};
 
 void setupRelay(void) {
     gpio_config_t config ={
@@ -26,12 +27,12 @@ void setRelay(bool on)
     gpio_set_level(RELAY_PIN, on ? 0 : 1);
 
     // Remember the state we commanded.
-    relayState = on;
+    relayState.store(on, std::memory_order_relaxed);
 }
 
 // Return the last commanded state: true = ON, false = OFF.
 // This does not measure the physical relay contacts.
 bool getRelay(void)
 {
-    return relayState;
+    return relayState.load(std::memory_order_relaxed);
 }

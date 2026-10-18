@@ -1,9 +1,13 @@
 #include "app_ble.h"
 #include "ble_mesh.h"
+#include "lab_mesh_addresses.h"
 
 #include "esp_ble_mesh_common_api.h"
 #include "esp_ble_mesh_provisioning_api.h"
 #include "esp_ble_mesh_generic_model_api.h"
+#include "esp_timer.h"
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
 
 // Label messages from the gateway's Mesh module.
 static const char *TAG = "gateway_mesh";
@@ -18,10 +22,76 @@ ESP_BLE_MESH_MODEL_PUB_DEFINE(onoffClientPub, 2 + 1, ROLE_NODE);
 static esp_ble_mesh_client_t onoffClient = {};
 
 // RelayNode's current provisioned address.
-static constexpr uint16_t relayAddress = 0x0009;
+static constexpr uint16_t relayAddress = LAB_MESH_RELAY_ADDRESS;
 
 // Identify successive OnOff commands.
 static uint8_t transactionID = 0;
+
+static portMUX_TYPE relayStateLock = portMUX_INITIALIZER_UNLOCKED;
+static bool reportedOn = false;
+static int64_t reportedAt = 0;
+
+bool getRelayReportedState(bool *on)
+{
+    if (on == nullptr) return false;
+    const int64_t now = esp_timer_get_time();
+    portENTER_CRITICAL(&relayStateLock);
+    const bool fresh = reportedAt != 0 && now - reportedAt <= 6000000;
+    *on = reportedOn;
+    portEXIT_CRITICAL(&relayStateLock);
+    return fresh;
+}
+
+static void relayStatusHandler(esp_ble_mesh_generic_client_cb_event_t event,
+                               esp_ble_mesh_generic_client_cb_param_t *param)
+{
+    if (param == nullptr || param->params == nullptr || param->error_code != 0 ||
+        param->params->ctx.addr != relayAddress) return;
+
+    const bool queryReply = event == ESP_BLE_MESH_GENERIC_CLIENT_GET_STATE_EVT &&
+        param->params->opcode == ESP_BLE_MESH_MODEL_OP_GEN_ONOFF_GET;
+    const bool pushedReport = event == ESP_BLE_MESH_GENERIC_CLIENT_PUBLISH_EVT &&
+        param->params->opcode == ESP_BLE_MESH_MODEL_OP_GEN_ONOFF_STATUS;
+    if (!queryReply && !pushedReport) return;
+
+    const bool on = param->status_cb.onoff_status.present_onoff != 0;
+    const int64_t now = esp_timer_get_time();
+    portENTER_CRITICAL(&relayStateLock);
+    const bool changed = reportedAt == 0 || reportedOn != on;
+    reportedOn = on;
+    reportedAt = now;
+    portEXIT_CRITICAL(&relayStateLock);
+    // Distinguish immediate reports from recovery replies when measuring latency.
+    if (changed || pushedReport)
+    {
+        ESP_LOGI(TAG, "Relay reported state: %s via %s (RSSI %d dBm)",
+                 on ? "ON" : "OFF", pushedReport ? "push" : "query",
+                 static_cast<int>(param->params->ctx.recv_rssi));
+    }
+}
+
+static void pollRelayState(void *)
+{
+    while (true)
+    {
+        if (esp_ble_mesh_node_is_provisioned() && onoffClient.model != nullptr &&
+            onoffClient.model->keys[0] != ESP_BLE_MESH_KEY_UNUSED)
+        {
+            esp_ble_mesh_client_common_param_t query = {};
+            query.opcode = ESP_BLE_MESH_MODEL_OP_GEN_ONOFF_GET;
+            query.model = onoffClient.model;
+            query.ctx.net_idx = 0;
+            query.ctx.app_idx = onoffClient.model->keys[0];
+            query.ctx.addr = relayAddress;
+            query.ctx.send_ttl = 7;
+            query.msg_timeout = 1500;
+            esp_ble_mesh_generic_client_get_state_t state = {};
+            const esp_err_t result = esp_ble_mesh_generic_client_get_state(&query, &state);
+            if (result != ESP_OK) ESP_LOGD(TAG, "Relay query failed: %s", esp_err_to_name(result));
+        }
+        vTaskDelay(pdMS_TO_TICKS(2000));
+    }
+}
 
 // Initial settings for configuring this Mesh node.
 static esp_ble_mesh_cfg_srv_t configServer = {
@@ -83,12 +153,18 @@ esp_err_t setupGatewayMesh(void)
         ble_configHandler));
     ESP_ERROR_CHECK(esp_ble_mesh_register_health_server_callback(
         health_EventHandler));
+    ESP_ERROR_CHECK(esp_ble_mesh_register_generic_client_callback(relayStatusHandler));
 
         // Stop if Mesh initialization cannot be started.
     esp_err_t result = esp_ble_mesh_init(&provisioning, &composition);
     if (result != ESP_OK)
     {
         return result;
+    }
+
+    if (xTaskCreate(pollRelayState, "relay_status", 3072, nullptr, 5, nullptr) != pdPASS)
+    {
+        return ESP_ERR_NO_MEM;
     }
 
     // Keep saved membership after a restart.
