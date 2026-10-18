@@ -37,6 +37,10 @@
 // BLE Mesh Provisioning Protocol API
 #include "esp_ble_mesh_provisioning_api.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 // Sets up BLE Bluedroid Host & Controller Stack
 esp_err_t setupBLEHC(void);
 
@@ -64,5 +68,9 @@ typedef struct {
 
 // Called from Nodes BLE Initialization
 void attention_Handler(attention_callbacks_t callbacks);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

@@ -1,12 +1,18 @@
 #include "ble_mesh.h"
+#include <string.h>
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
+#include "esp_system.h"
 
 static const char *TAG = "BLE Mesh";
 
 esp_err_t setupBLEHC(void) {
     esp_err_t result;
 
-    // Free up Classic Bluetooth memory
+#if CONFIG_IDF_TARGET_ESP32
+    // Only classic ESP32 has Classic Bluetooth memory to release.
     ESP_ERROR_CHECK(esp_bt_controller_mem_release(ESP_BT_MODE_CLASSIC_BT));
+#endif
 
     // Configure Bluetooth Controller (Default Config mode)
     esp_bt_controller_config_t bluetooth_config = BT_CONTROLLER_INIT_CONFIG_DEFAULT();
@@ -49,7 +55,7 @@ void getDeviceUUID(uint8_t *device_uuid) {
         return;
     }
 
-    // Copies the Bluetooth Controller 16-byte UUID to the pointer address
+    // Copy the six-byte Bluetooth address into the 16-byte device UUID.
     memcpy(device_uuid + 2, esp_bt_dev_get_address(), BD_ADDR_LEN);
 }
 
@@ -83,8 +89,6 @@ void provisioningHandler(esp_ble_mesh_prov_cb_event_t event, esp_ble_mesh_prov_c
         case ESP_BLE_MESH_NODE_PROV_RESET_EVT: 
             ESP_LOGI(TAG, "reset.");
 
-            // Resets the ESP32 Bluetooth Mesh node locally
-            esp_ble_mesh_node_local_reset();
 
             // Creates a FreeRTOS task to reboot the device after a delay
             xTaskCreate(rebootDevice, "Reboot Device", 2048, NULL, 1, NULL); 

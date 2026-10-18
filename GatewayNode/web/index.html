@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <meta name="color-scheme" content="light dark">
+    <meta name="theme-color" content="#f5f5f7">
+    <title>Smart Home | Relay control</title>
+    <link rel="icon" href="data:,">
+    <link rel="preload" href="/inter-latin.woff2" as="font" type="font/woff2" crossorigin>
+    <script>
+        // Apply the preferred theme before the page is painted.
+        try {
+            var savedTheme = localStorage.getItem('smart-home-theme');
+            document.documentElement.dataset.theme = savedTheme === 'light' || savedTheme === 'dark'
+                ? savedTheme : (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+        } catch (_) {
+            document.documentElement.dataset.theme = matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+        }
+    </script>
+    <style>
+        @font-face{font-family:Inter;src:url('/inter-latin.woff2') format('woff2');font-weight:100 900;font-style:normal;font-display:swap}
+        :root{color-scheme:light;--canvas:#f5f5f5;--ink:#1d1d1d;--muted:#555;--surface:#fff;--glass:rgba(255,255,255,.32);--line:rgba(100,100,100,.25);--edge:rgba(255,255,255,.95);--glint:rgba(255,255,255,.55);--glint-soft:rgba(255,255,255,.08);--shadow:rgba(40,40,40,.12);--ribbon:#cacaca;--ribbon-bright:#fff;--secondary:rgba(222,222,222,.45);--focus:#505050;--error:var(--ink);--selection:#d6d6d6;--accent-ink:#fff;--request-tint:rgba(0,0,0,.07)}
+        :root[data-theme=dark]{color-scheme:dark;--canvas:#080808;--ink:#f5f5f5;--muted:#c4c4c4;--surface:#1b1b1b;--glass:rgba(30,30,30,.36);--line:rgba(215,215,215,.24);--edge:rgba(245,245,245,.5);--glint:rgba(255,255,255,.13);--glint-soft:rgba(255,255,255,.025);--shadow:rgba(0,0,0,.32);--ribbon:#383838;--ribbon-bright:#626262;--secondary:rgba(104,104,104,.2);--focus:#e3e3e3;--selection:#474747;--accent-ink:#1d1d1d;--request-tint:rgba(255,255,255,.1)}
+        *{box-sizing:border-box}html{background:var(--canvas);-webkit-tap-highlight-color:transparent}body{margin:0;min-height:100svh;color:var(--ink);font:400 16px/1.55 Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;font-optical-sizing:auto;isolation:isolate;overflow-wrap:break-word;padding:24px max(22px,env(safe-area-inset-right)) max(22px,env(safe-area-inset-bottom)) max(22px,env(safe-area-inset-left))}
+        /* The same silver ribbon geometry is shared by both themes. */
+        body::before{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;background:radial-gradient(ellipse 110% 20% at 80% -5%,var(--ribbon-bright) 0%,transparent 72%),linear-gradient(154deg,transparent 20%,var(--ribbon) 27%,var(--ribbon-bright) 28%,transparent 38%),linear-gradient(25deg,transparent 42%,var(--ribbon) 49%,var(--ribbon-bright) 50%,transparent 63%);opacity:.65}
+        ::selection{background:var(--selection);color:var(--ink)}button{font:inherit;cursor:pointer;touch-action:manipulation;user-select:none}svg{width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:1.75;stroke-linecap:round;stroke-linejoin:round;flex:none}svg.symbols{position:absolute;width:0;height:0;overflow:hidden}header,main,footer{width:min(1080px,100%);margin-inline:auto}.glass{background:var(--surface);border:1px solid var(--line)}
+        @supports ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){.glass{background:linear-gradient(125deg,var(--glint),transparent 38%,var(--glint-soft)),var(--glass);-webkit-backdrop-filter:blur(14px) saturate(130%);backdrop-filter:blur(14px) saturate(130%);border-top-color:var(--edge);border-left-color:var(--edge);box-shadow:0 18px 48px var(--shadow),inset 0 1px 1px var(--edge),inset 0 -1px 0 var(--glint-soft)}}
+        header{min-height:74px;display:flex;align-items:center;justify-content:space-between;gap:16px;padding:12px 25px;border-radius:40px}.brand{display:flex;gap:13px;align-items:center;min-width:0}.brand>svg{width:30px;height:30px}.brand-name{font-size:19px;font-weight:650;letter-spacing:-.025em;white-space:nowrap}.brand-subtitle{font-size:14px;color:var(--muted);padding-left:20px;margin-left:6px;border-left:1px solid var(--line)}
+        .theme-switch{display:flex;gap:2px;background:var(--secondary);padding:4px;border-radius:28px;flex:none}.theme-switch button{display:grid;place-items:center;width:48px;height:40px;border:1px solid transparent;border-radius:24px;color:var(--muted);background:transparent}.theme-switch button[aria-pressed=true]{background:var(--surface);border-color:var(--line);color:var(--ink);box-shadow:0 2px 5px var(--shadow)}.theme-switch svg{width:21px;height:21px}
+        main{padding-top:54px}.intro{padding-inline:24px;margin-bottom:32px}h1{font-size:48px;line-height:1.12;letter-spacing:-.035em;font-weight:650;margin:0 0 12px;text-wrap:balance}.intro p{font-size:20px;line-height:1.5;color:var(--muted);margin:0}.relay-panel{border-radius:26px;padding:30px 38px 35px}.panel-heading h2{font-size:23px;letter-spacing:-.025em;line-height:1.3;margin:0 0 3px;font-weight:600}.panel-heading p{font-size:15px;color:var(--muted);margin:0}.control-layout{display:grid;grid-template-columns:minmax(190px,.85fr) minmax(0,1.15fr);gap:54px;align-items:center;padding:22px 0 0}.power-disc{width:200px;aspect-ratio:1;display:grid;place-items:center;justify-self:center;border:1px solid var(--edge);border-radius:50%;background:var(--glass);box-shadow:0 12px 28px var(--shadow),inset 0 1px 0 var(--edge)}.power-disc svg{width:90px;height:90px;stroke-width:1.6}.request-label{font-size:14px;color:var(--muted);margin:0 0 4px}.last-command{font-size:30px;font-weight:600;line-height:1.25;letter-spacing:-.025em;margin:0}.command-time{font-size:14px;color:var(--muted);margin:5px 0 23px;font-variant-numeric:tabular-nums;min-height:22px}.commands{display:grid;grid-template-columns:1fr 1fr;gap:12px}.command-form{margin:0}.command-button{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;min-height:58px;padding:13px 15px;border:1px solid var(--line);border-radius:16px;font-size:16px;font-weight:600;line-height:1.4;transition:transform 100ms ease-out,background 150ms ease-out}.command-button{background:var(--secondary);color:var(--ink);box-shadow:inset 0 1px 0 var(--glint)}.command-button .button-check{display:none}.command-button[data-active=true]{background:var(--command-color);color:var(--accent-ink);border-color:transparent;box-shadow:inset 0 1px 0 var(--glint),0 5px 14px var(--shadow)}.relay-panel[data-command-pending=false] .command-button[data-active=true] .button-power{display:none}.relay-panel[data-command-pending=false] .command-button[data-active=true] .button-check{display:block}.command-button:active:not(:disabled){transform:scale(.97)}.command-button:disabled{cursor:wait;opacity:.55}.command-button:focus-visible,.theme-switch button:focus-visible{outline:3px solid var(--focus);outline-offset:4px}
+        :root{--success:#166b45;--power-on-surface:rgba(27,27,27,.88)}
+        :root[data-theme=dark]{--success:#85e0b4;--power-on-surface:rgba(255,255,255,.07)}
+        .state-detail{font-size:13px;color:var(--muted);margin:6px 0 20px}.web-command{font-size:16px;font-weight:550;margin:0}.relay-panel[data-relay-state=unknown] .last-command{font-size:24px;color:var(--muted)}
+        @media(max-width:740px){.state-detail,.web-command{text-align:center}}
+        /* Selection and glow follow fresh RelayNode reports, independently of web requests. */
+        .relay-panel[data-relay-state]{--command-color:var(--ink);--command-tint:var(--request-tint)}
+        .relay-panel[data-relay-state] .power-disc{color:var(--command-color);border-color:var(--command-color);background:linear-gradient(145deg,var(--command-tint),transparent 75%),var(--glass)}
+        .relay-panel[data-relay-state] .last-command{color:var(--command-color)}
+        .power-disc{position:relative;box-shadow:0 16px 36px var(--shadow),inset 0 2px 2px var(--edge),inset 0 -1px 2px var(--glint);transition:color 160ms ease-out,border-color 160ms ease-out}
+        .power-disc::before{content:"";position:absolute;inset:5px;border-radius:inherit;border-top:1px solid var(--edge);pointer-events:none}
+        .power-disc svg{color:var(--muted);filter:none;transition:color 160ms ease-out,filter 160ms ease-out}
+        .relay-panel[data-visual-state=on] .power-disc{background:var(--power-on-surface)}
+        .relay-panel[data-visual-state=on] .power-disc svg{color:#fff;filter:drop-shadow(0 0 5px rgba(255,255,255,.8)) drop-shadow(0 0 14px rgba(255,255,255,.45))}
+        .relay-panel[data-visual-state=off] .power-disc{border-color:var(--line)}
+        .feedback{display:flex;gap:12px;border-top:1px solid var(--line);margin-top:22px;padding-top:17px;min-height:81px;align-items:flex-start}.feedback-icon{width:24px;height:24px;margin-top:2px}.feedback-title{margin:0;font-size:15px;font-weight:550;line-height:1.5}.feedback-detail{margin:3px 0 0;font-size:13px;line-height:1.55;color:var(--muted)}.feedback .success-icon,.feedback .error-icon{display:none}.feedback[data-state=success] .success-icon,.feedback[data-state=error] .error-icon{display:block}.feedback[data-state=success] .idle-icon,.feedback[data-state=error] .idle-icon{display:none}.feedback[data-state=success]{color:var(--success)}.feedback[data-state=error]{color:var(--error)}.feedback[data-state=error] .feedback-detail{color:var(--error)}
+        .sensor-info{padding:28px 24px 26px}.sensor-rules{display:flex;align-items:center;gap:36px;margin:0 0 13px}.sensor-rule{display:flex;align-items:center;gap:15px;font-size:16px}.sensor-rule+ .sensor-rule{border-left:1px solid var(--line);padding-left:36px}.sensor-rule svg{width:29px;height:29px}.sensor-info p{margin:0;font-size:14px;line-height:1.7;color:var(--muted);max-width:75ch}footer{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;padding:20px 4px 0;border-top:1px solid var(--line);color:var(--muted);font-size:12px}noscript p{padding:12px 0;font-size:14px;color:var(--muted)}
+        @media(hover:hover) and (pointer:fine){.command-button:hover:not(:disabled){filter:brightness(.9)}.theme-switch button:hover{color:var(--ink)}}
+        @media(max-width:740px){body{padding-top:16px}header{padding:10px 15px;min-height:66px}.brand{gap:9px}.brand-name{font-size:17px}.brand>svg{width:25px;height:25px}.brand-subtitle{display:none}.theme-switch button{width:42px;height:38px}main{padding-top:35px}.intro{padding-inline:6px;margin-bottom:25px}h1{font-size:34px;line-height:1.15;letter-spacing:-.03em}.intro p{font-size:16px}.relay-panel{padding:25px 23px 21px;border-radius:22px}.panel-heading h2{font-size:21px}.panel-heading p{font-size:14px}.control-layout{grid-template-columns:1fr;gap:24px;padding-top:25px}.power-disc{width:126px}.power-disc svg{width:61px;height:61px}.request-label,.last-command,.command-time{text-align:center}.last-command{font-size:27px}.command-time{margin-bottom:21px}.commands{gap:10px}.command-button{min-height:56px;padding:13px 10px;font-size:15px;border-radius:14px}.command-button svg{width:21px;height:21px}.feedback{margin-top:20px;min-height:91px}.sensor-info{padding:25px 6px}.sensor-rules{gap:15px;flex-wrap:wrap}.sensor-rule{gap:9px;font-size:14px}.sensor-rule+ .sensor-rule{padding-left:15px}.sensor-rule svg{width:23px;height:23px}.sensor-info p{font-size:13px}footer{padding-top:17px}}
+        @media(max-width:355px){.sensor-rules{display:grid;gap:12px}.sensor-rule+ .sensor-rule{border:0;padding-left:0}.commands{grid-template-columns:1fr}}
+        @media(prefers-reduced-motion:reduce){*,*::before,*::after{transition:none!important;animation:none!important}}
+        @media(prefers-reduced-transparency:reduce){.glass,.power-disc,.relay-panel[data-relay-state] .power-disc{background:var(--surface);backdrop-filter:none;-webkit-backdrop-filter:none}.relay-panel[data-visual-state=on] .power-disc{background:#1b1b1b}body::before{display:none}}
+        .relay-panel[data-command-pending=true] .power-disc::after{content:"Pending";position:absolute;bottom:8%;padding:2px 9px;border:1px solid var(--line);border-radius:20px;background:var(--surface);color:var(--ink);font-size:11px;font-weight:600;line-height:1.5}
+        .relay-panel[data-command-pending=true] .command-button,.relay-panel[data-command-pending=true] .power-disc,.relay-panel[data-command-pending=true] .power-disc svg{transition:none}
+    </style>
+    <script src="/app.js" defer></script>
+</head>
+<body>
+    <!-- Lucide SVG paths, distributed under ISC; attribution is in /licenses.txt. -->
+    <svg class="symbols" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><defs>
+        <symbol id="icon-house" viewBox="0 0 24 24"><path d="M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8" />
+  <path d="M3 10a2 2 0 0 1 .709-1.528l7-6a2 2 0 0 1 2.582 0l7 6A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" /></symbol>
+        <symbol id="icon-power" viewBox="0 0 24 24"><path d="M12 2v10" />
+  <path d="M18.4 6.6a9 9 0 1 1-12.77.04" /></symbol>
+        <symbol id="icon-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4" />
+  <path d="M12 2v2" />
+  <path d="M12 20v2" />
+  <path d="m4.93 4.93 1.41 1.41" />
+  <path d="m17.66 17.66 1.41 1.41" />
+  <path d="M2 12h2" />
+  <path d="M20 12h2" />
+  <path d="m6.34 17.66-1.41 1.41" />
+  <path d="m19.07 4.93-1.41 1.41" /></symbol>
+        <symbol id="icon-moon" viewBox="0 0 24 24"><path d="M20.985 12.486a9 9 0 1 1-9.473-9.472c.405-.022.617.46.402.803a6 6 0 0 0 8.268 8.268c.344-.215.825-.004.803.401" /></symbol>
+        <symbol id="icon-check" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" />
+  <path d="m16 9-5.5 5.5L8 12" /></symbol>
+        <symbol id="icon-alert" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" />
+  <line x1="12" x2="12" y1="8" y2="12" />
+  <line x1="12" x2="12.01" y1="16" y2="16" /></symbol>
+    </defs></svg>
+    <header class="glass">
+        <div class="brand"><svg aria-hidden="true"><use href="#icon-house"/></svg><span class="brand-name">Smart Home</span><span class="brand-subtitle">Local gateway</span></div>
+        <div class="theme-switch" role="group" aria-label="Color theme">
+            <button type="button" data-theme-choice="light" aria-label="Use light theme" aria-pressed="true"><svg aria-hidden="true"><use href="#icon-sun"/></svg></button>
+            <button type="button" data-theme-choice="dark" aria-label="Use dark theme" aria-pressed="false"><svg aria-hidden="true"><use href="#icon-moon"/></svg></button>
+        </div>
+    </header>
+    <main>
+        <div class="intro"><h1>Your home, in control.</h1><p>Turn the relay on or off. Stay right here.</p></div>
+        <section id="relay-panel" class="relay-panel glass" aria-labelledby="relay-heading" aria-busy="false">
+            <div class="panel-heading"><h2 id="relay-heading">Relay control</h2><p>Send a command to your relay.</p></div>
+            <div class="control-layout">
+                <div class="power-disc" aria-hidden="true"><svg><use href="#icon-power"/></svg></div>
+                <div class="command-area">
+                    <p class="request-label">Relay reported state</p><p id="relay-state" class="last-command" role="status" aria-live="polite" aria-atomic="true">Checking relay…</p><p id="relay-state-detail" class="state-detail">Waiting for the first relay report.</p><p class="request-label">Last command from this page</p><p id="last-command" class="web-command">No command yet</p><p id="command-time" class="command-time">Choose on or off below.</p>
+                    <div class="commands">
+                        <form class="command-form" action="/on" method="post" data-command="ON"><button class="command-button on" type="submit" data-command-button="ON" data-selected="false"><svg class="button-power" aria-hidden="true"><use href="#icon-power"/></svg><svg class="button-check" aria-hidden="true"><use href="#icon-check"/></svg>Turn on</button></form>
+                        <form class="command-form" action="/off" method="post" data-command="OFF"><button class="command-button off" type="submit" data-command-button="OFF" data-selected="false"><svg class="button-power" aria-hidden="true"><use href="#icon-power"/></svg><svg class="button-check" aria-hidden="true"><use href="#icon-check"/></svg>Turn off</button></form>
+                    </div>
+                    <div id="feedback" class="feedback" role="status" aria-live="polite" aria-atomic="true" data-state="idle">
+                        <svg class="feedback-icon idle-icon" aria-hidden="true"><use href="#icon-power"/></svg><svg class="feedback-icon success-icon" aria-hidden="true"><use href="#icon-check"/></svg><svg class="feedback-icon error-icon" aria-hidden="true"><use href="#icon-alert"/></svg>
+                        <div><p id="feedback-title" class="feedback-title">Ready when you are</p><p id="feedback-detail" class="feedback-detail">Your request result appears here. Relay reports update separately above.</p></div>
+                    </div>
+                    <noscript><p>JavaScript is off. Commands return to this page; check the relay to confirm the result.</p></noscript>
+                </div>
+            </div>
+        </section>
+        <section class="sensor-info" aria-label="How light changes control the relay">
+            <div class="sensor-rules"><div class="sensor-rule"><svg aria-hidden="true"><use href="#icon-moon"/></svg><span>Dark turns it on</span></div><div class="sensor-rule"><svg aria-hidden="true"><use href="#icon-sun"/></svg><span>Bright turns it off</span></div></div>
+            <p>Sensor updates happen when the light changes. Until then, your last command stays in effect. The first reading after a sensor restart can also update the relay.</p>
+        </section>
+    </main>
+    <footer><span>ESP32 Smart Home</span><span>Local network</span></footer>
+</body>
+</html>

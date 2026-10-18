@@ -29,7 +29,7 @@ ESP_BLE_MESH_MODEL_PUB_DEFINE(onoff_pub_0, 2 + 3, ROLE_NODE);
 // User Data of Generic OnOff Server Model
 static esp_ble_mesh_gen_onoff_srv_t onoff_server_0 = {
     .rsp_ctrl.get_auto_rsp = ESP_BLE_MESH_SERVER_AUTO_RSP,
-    .rsp_ctrl.set_auto_rsp = ESP_BLE_MESH_SERVER_RSP_BY_APP,
+    .rsp_ctrl.set_auto_rsp = ESP_BLE_MESH_SERVER_AUTO_RSP,
     .rsp_ctrl.status_auto_rsp = ESP_BLE_MESH_SERVER_AUTO_RSP
 };
 
@@ -87,47 +87,36 @@ static esp_ble_mesh_comp_t composition = {
 };
 
 
-
-
-
-
-
-
-
-
-static void generic_server_cb(esp_ble_mesh_generic_server_cb_event_t event, esp_ble_mesh_generic_server_cb_param_t *param) {
-    esp_ble_mesh_model_t *model = &root_models[1];
-    esp_ble_mesh_gen_onoff_srv_t *srv = &onoff_server_0;
-    esp_ble_mesh_msg_ctx_t *ctx = &param->ctx;
-
-    switch (event)
-    {
-    case ESP_BLE_MESH_GENERIC_SERVER_STATE_CHANGE_EVT:
-    case ESP_BLE_MESH_GENERIC_SERVER_RECV_SET_MSG_EVT:
-        if (param->ctx.recv_op == ESP_BLE_MESH_MODEL_OP_GEN_ONOFF_SET || param->ctx.recv_op == ESP_BLE_MESH_MODEL_OP_GEN_ONOFF_SET_UNACK) {
-            if (ctx->recv_op == ESP_BLE_MESH_MODEL_OP_GEN_ONOFF_SET) {
-                esp_ble_mesh_server_model_send_msg(model, ctx, ESP_BLE_MESH_MODEL_OP_GEN_ONOFF_STATUS, sizeof(srv->state.onoff), &srv->state.onoff);
-            }
-        }
-        break;
-    default:
-        ESP_LOGW(TAG, "unexpected event (%d)", event);
-        break;
-    }
-}
-
-void appble_update_state(bool onoff)
+esp_err_t appble_update_state(bool onoff)
 {
     esp_ble_mesh_model_t *model = &root_models[1];
     esp_ble_mesh_gen_onoff_srv_t *srv = &onoff_server_0;
 
     srv->state.onoff = onoff;
-    esp_ble_mesh_model_publish(model, ESP_BLE_MESH_MODEL_OP_GEN_ONOFF_STATUS, sizeof(srv->state.onoff), &srv->state.onoff, ROLE_NODE);
+
+    // Retry later until Mesh publication is configured.
+    if (!esp_ble_mesh_node_is_provisioned() ||
+        model->pub == NULL ||
+        model->pub->publish_addr == ESP_BLE_MESH_ADDR_UNASSIGNED)
+    {
+        return ESP_ERR_INVALID_STATE;
+    }
+
+    esp_err_t result = esp_ble_mesh_model_publish(
+        model,
+        ESP_BLE_MESH_MODEL_OP_GEN_ONOFF_STATUS,
+        sizeof(srv->state.onoff),
+        &srv->state.onoff,
+        ROLE_NODE);
+
+    if (result != ESP_OK)
+    {
+        ESP_LOGW(TAG, "Sensor publication failed: %s",
+                 esp_err_to_name(result));
+    }
+
+    return result;
 }
-
-
-
-
 
 
 
@@ -138,37 +127,37 @@ void initializeBLEMesh(attention_callbacks_t cbs) {
     // Set Initial attention LED State
     attention_Handler(cbs);
 
-    // Initialize Non-Volatile Flash with the Default NVS Flash Partition
-    esp_err_t nvs_result = nvs_flash_init();
-    if(nvs_result == ESP_ERR_NVS_NO_FREE_PAGES || nvs_result == ESP_ERR_NVS_NEW_VERSION_FOUND) {
-        // When If-Statement detects nvs is failing, it erases flash and initializes again
-        ESP_ERROR_CHECK(nvs_flash_erase());
-        ESP_ERROR_CHECK(nvs_flash_init());
+   esp_err_t nvs_result = nvs_flash_init();
+    if (nvs_result == ESP_ERR_NVS_NO_FREE_PAGES ||
+     nvs_result == ESP_ERR_NVS_NEW_VERSION_FOUND)
+    {
+    ESP_ERROR_CHECK(nvs_flash_erase());
+        nvs_result = nvs_flash_init();
     }
+    ESP_ERROR_CHECK(nvs_result);
 
-    // Sets up BLE Bluedroid Host & Controller Stack
-    if(setupBLEHC() != ESP_OK) {
-        return;
-    }
+    ESP_ERROR_CHECK(setupBLEHC());
 
     // Get device UUID for Mesh Provisioning
     getDeviceUUID(dev_uuid);
 
-    // Store BLE Mesh Callbacks
-    esp_ble_mesh_register_prov_callback(provisioningHandler);
-    esp_ble_mesh_register_config_server_callback(ble_configHandler);
-    esp_ble_mesh_register_generic_server_callback(generic_server_cb);
-    esp_ble_mesh_register_health_server_callback(health_EventHandler);
+   // Stop startup if a Mesh event handler cannot be registered.
+    ESP_ERROR_CHECK(esp_ble_mesh_register_prov_callback(
+        provisioningHandler));
+    ESP_ERROR_CHECK(esp_ble_mesh_register_config_server_callback(
+    ble_configHandler));
+    ESP_ERROR_CHECK(esp_ble_mesh_register_health_server_callback(
+        health_EventHandler));
 
-    // Initialize BLE Mesh Provisioning Capabilities Module
-    if(esp_ble_mesh_init(&provision, &composition) != ESP_OK) {
-        ESP_LOGE(TAG, "Failed to Initialize Mesh Module");
+    ESP_ERROR_CHECK(esp_ble_mesh_init(&provision, &composition));
+
+    // Use saved membership instead of enabling provisioning again.
+    if (esp_ble_mesh_node_is_provisioned())
+    {
+        ESP_LOGI(TAG, "Restored SensorNode Mesh membership");
         return;
     }
 
-    // Enable Provisioning Bearers (PB_ADV & PB_GATT)
-    if(esp_ble_mesh_node_prov_enable(ESP_BLE_MESH_PROV_ADV | ESP_BLE_MESH_PROV_GATT) != ESP_OK) {
-        ESP_LOGE(TAG, "Failed to Enable node Provisioning Bearers");
-        return;
-    }
+    ESP_ERROR_CHECK(esp_ble_mesh_node_prov_enable(
+    ESP_BLE_MESH_PROV_ADV | ESP_BLE_MESH_PROV_GATT));
 }

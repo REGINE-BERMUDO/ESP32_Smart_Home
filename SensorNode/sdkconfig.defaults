@@ -52,3 +52,6 @@ CONFIG_BLE_MESH_RX_SEG_MSG_COUNT=10
 # Set partition table for 2MB Flash Size
 CONFIG_PARTITION_TABLE_SINGLE_APP=y
 # CONFIG_PARTITION_TABLE_CUSTOM is not set
+
+# Preserve Mesh membership and settings after reboot.
+CONFIG_BLE_MESH_SETTINGS=y

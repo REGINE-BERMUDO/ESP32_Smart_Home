@@ -1,16 +1,26 @@
 #ifndef LED_H
 #define LED_H
 
-// Rename GPIO_NUM_19 to LED_PIN
-#define LED_PIN GPIO_NUM_19
+#include <stdbool.h>
+#include "driver/gpio.h"
+#include "sdkconfig.h"
 
-// For GPIO Setup
-#include <driver/gpio.h>
+// S3 uses GPIO4; classic ESP32 nodes use GPIO26.
+#if CONFIG_IDF_TARGET_ESP32S3
+#define LED_PIN GPIO_NUM_4
+#else
+#define LED_PIN GPIO_NUM_26
+#endif
 
-// Sets up LED Pin
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 void setupLED(void);
+void updateLED(bool on);
 
-// Update LED state callback function for BLE Mesh
-void updateLED(bool);
+#ifdef __cplusplus
+}
+#endif
 
 #endif
