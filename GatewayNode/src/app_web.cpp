@@ -2,107 +2,113 @@
 #include "app_ble.h"
 #include "esp_http_server.h"
 #include "esp_log.h"
+#include <cstring>
 
-// Label this module's messages.
 static const char *TAG = "gateway_web";
-
-// Keep the server handle so we can avoid starting it twice.
 static httpd_handle_t server = nullptr;
 
-// Respond when a browser requests the home page.
+// Assets are embedded in flash by src/CMakeLists.txt; no filesystem is needed.
+extern const unsigned char pageStart[] asm("_binary_index_html_start");
+extern const unsigned char pageEnd[] asm("_binary_index_html_end");
+extern const unsigned char scriptStart[] asm("_binary_app_js_start");
+extern const unsigned char scriptEnd[] asm("_binary_app_js_end");
+extern const unsigned char fontStart[] asm("_binary_inter_latin_woff2_start");
+extern const unsigned char fontEnd[] asm("_binary_inter_latin_woff2_end");
+extern const unsigned char licenseStart[] asm("_binary_licenses_txt_start");
+extern const unsigned char licenseEnd[] asm("_binary_licenses_txt_end");
+
 static esp_err_t homeHandler(httpd_req_t *request)
 {
-        const char *page =
-        "<!DOCTYPE html>"
-        "<html><head>"
-        "<meta name='viewport' content='width=device-width, initial-scale=1'>"
-        "<title>ESP32 Gateway</title>"
-        "</head><body>"
-        "<h1>ESP32 Smart Home</h1>"
-        "<p>Relay controls</p>"
-        "<form action='/on' method='post'>"
-        "<button type='submit'>ON</button>"
-        "</form>"
-        "<form action='/off' method='post'>"
-        "<button type='submit'>OFF</button>"
-        "</form>"
-        "<p>Buttons send relay commands over Bluetooth Mesh.</p>"
-        "</body></html>";
+    httpd_resp_set_type(request, "text/html; charset=utf-8");
+    httpd_resp_set_hdr(request, "Cache-Control", "no-store");
+    return httpd_resp_send(request, reinterpret_cast<const char *>(pageStart), pageEnd - pageStart);
+}
 
-    httpd_resp_set_type(request, "text/html");
-    return httpd_resp_send(request, page, HTTPD_RESP_USE_STRLEN);
-}   
-
-// Send the web button's ON command over Mesh.
-static esp_err_t onHandler(httpd_req_t *request)
+static esp_err_t scriptHandler(httpd_req_t *request)
 {
-    esp_err_t result = sendRelayCommand(true);
+    httpd_resp_set_type(request, "application/javascript; charset=utf-8");
+    httpd_resp_set_hdr(request, "Cache-Control", "no-store");
+    return httpd_resp_send(request, reinterpret_cast<const char *>(scriptStart), scriptEnd - scriptStart);
+}
+
+static esp_err_t fontHandler(httpd_req_t *request)
+{
+    httpd_resp_set_type(request, "font/woff2");
+    httpd_resp_set_hdr(request, "Cache-Control", "public, max-age=86400");
+    return httpd_resp_send(request, reinterpret_cast<const char *>(fontStart), fontEnd - fontStart);
+}
+
+static esp_err_t licenseHandler(httpd_req_t *request)
+{
+    httpd_resp_set_type(request, "text/plain; charset=utf-8");
+    return httpd_resp_send(request, reinterpret_cast<const char *>(licenseStart), licenseEnd - licenseStart);
+}
+
+static esp_err_t handleCommand(httpd_req_t *request, bool on)
+{
+    const esp_err_t result = sendRelayCommand(on);
+    if (result == ESP_OK)
+    {
+        ESP_LOGI(TAG, "Web %s command accepted for sending", on ? "ON" : "OFF");
+    }
+    else
+    {
+        ESP_LOGE(TAG, "%s send failed: %s", on ? "ON" : "OFF", esp_err_to_name(result));
+    }
+
+    httpd_resp_set_hdr(request, "Cache-Control", "no-store");
+    char requestedWith[16] = {};
+    const bool async = httpd_req_get_hdr_value_str(
+        request, "X-Requested-With", requestedWith, sizeof(requestedWith)) == ESP_OK &&
+        std::strcmp(requestedWith, "fetch") == 0;
+
+    // Ordinary form submissions also return to the dashboard, without a Back step.
+    if (!async)
+    {
+        httpd_resp_set_status(request, "303 See Other");
+        httpd_resp_set_hdr(request, "Location", "/");
+        return httpd_resp_send(request, nullptr, 0);
+    }
+
+    httpd_resp_set_type(request, "text/plain; charset=utf-8");
     if (result != ESP_OK)
     {
-        ESP_LOGE(TAG, "ON send failed: %s", esp_err_to_name(result));
-          httpd_resp_set_status(request, "503 Service Unavailable");
-          return httpd_resp_send(
-            request, "Cannot send the Mesh command.",
+        httpd_resp_set_status(request, "503 Service Unavailable");
+        return httpd_resp_send(request,
+            "Check the gateway's Mesh provisioning and Lights key binding, then try again.",
             HTTPD_RESP_USE_STRLEN);
     }
-
-    ESP_LOGI(TAG, "Web ON command accepted for sending");
-    return httpd_resp_send(
-        request, "ON command queued. Return to use the controls.",
-        HTTPD_RESP_USE_STRLEN);
+    return httpd_resp_send(request, "Request sent. Relay state is not confirmed.", HTTPD_RESP_USE_STRLEN);
 }
 
-// Send the web button's OFF command over Mesh.
+static esp_err_t onHandler(httpd_req_t *request)
+{
+    return handleCommand(request, true);
+}
+
 static esp_err_t offHandler(httpd_req_t *request)
 {
-    esp_err_t result = sendRelayCommand(false);
-    if (result != ESP_OK)
-    {
-        ESP_LOGE(TAG, "OFF send failed: %s", esp_err_to_name(result));
-      httpd_resp_set_status(request, "503 Service Unavailable");
-      return httpd_resp_send(
-        request, "Cannot send the Mesh command.",
-        HTTPD_RESP_USE_STRLEN);
-    }
-
-    ESP_LOGI(TAG, "Web OFF command accepted for sending");
-    return httpd_resp_send(
-        request, "OFF command queued. Return to use the controls.",
-        HTTPD_RESP_USE_STRLEN);
+    return handleCommand(request, false);
 }
 
-// Start the server and register its home page.
 void setupWeb(void)
 {
-    // Do nothing if the server is already running.
-    if (server != nullptr)
-    {
-        return;
-    }
+    if (server != nullptr) return;
 
     httpd_config_t config = HTTPD_DEFAULT_CONFIG();
     ESP_ERROR_CHECK(httpd_start(&server, &config));
 
-    // Route requests for "/" to our home-page handler.
-    httpd_uri_t home = {};
-    home.uri = "/";
-    home.method = HTTP_GET;
-    home.handler = homeHandler;
-
-    ESP_ERROR_CHECK(httpd_register_uri_handler(server, &home));
-    
-    // Handle POST requests from the ON button.
-    httpd_uri_t onRoute = {};
-    onRoute.uri = "/on";
-    onRoute.method = HTTP_POST;
-    onRoute.handler = onHandler;
-    ESP_ERROR_CHECK(httpd_register_uri_handler(server, &onRoute));
-
-    // Handle POST requests from the OFF button.
-    httpd_uri_t offRoute = {};
-    offRoute.uri = "/off";
-    offRoute.method = HTTP_POST;
-    offRoute.handler = offHandler;
-    ESP_ERROR_CHECK(httpd_register_uri_handler(server, &offRoute));
+    httpd_uri_t routes[] = {
+        {.uri = "/", .method = HTTP_GET, .handler = homeHandler},
+        {.uri = "/app.js", .method = HTTP_GET, .handler = scriptHandler},
+        {.uri = "/inter-latin.woff2", .method = HTTP_GET, .handler = fontHandler},
+        {.uri = "/licenses.txt", .method = HTTP_GET, .handler = licenseHandler},
+        {.uri = "/on", .method = HTTP_POST, .handler = onHandler},
+        {.uri = "/off", .method = HTTP_POST, .handler = offHandler},
+    };
+    for (const auto &route : routes)
+    {
+        ESP_ERROR_CHECK(httpd_register_uri_handler(server, &route));
+    }
     ESP_LOGI(TAG, "Web server started");
 }
